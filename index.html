@@ -611,6 +611,19 @@ rdIframe.addEventListener('load', () => {
   document.getElementById('rd-drop').classList.add('hidden');
 });
 
+function _chLabel(label, fallback) {
+  const app = label.match(/appendix\s+([A-Z])/i);
+  if (app) return app[1].toUpperCase();
+  const num = label.match(/^(?:chapter\s+)?(\d+)/i);
+  if (num) return num[1];
+  if (/^preface/i.test(label))              return 'P';
+  if (/^introduction/i.test(label))          return 'I';
+  if (/^(table of )?contents/i.test(label)) return 'C';
+  if (/^acknowledgment/i.test(label))        return 'Ack';
+  if (/^foreword/i.test(label))             return 'F';
+  return String(fallback);
+}
+
 function rdBuildToc(doc) {
   const headings = Array.from(doc.querySelectorAll('h1,h2,h3,h4'));
   rdToc = [];
@@ -640,7 +653,7 @@ function rdBuildToc(doc) {
       toggleBtn.setAttribute('aria-label', 'Toggle');
       const numEl = document.createElement('div');
       numEl.className = 'toc-n';
-      numEl.textContent = chNum;
+      numEl.textContent = _chLabel(item.label, chNum);
       const labelEl = document.createElement('span');
       labelEl.className = 'toc-ch-label';
       labelEl.textContent = item.label;
