@@ -73,20 +73,31 @@ html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', s
 .o-err { color: #D97070; }
 .o-dim { color: #706B60; }
 
-/* ── Textbook ── */
+/* ── Textbook / ePub reader ── */
 #tb { flex: 1; min-width: 0; flex-direction: row !important; }
-#tb-nav { width: 155px; flex: none; border-right: 1px solid #EAE7DF; overflow-y: auto; padding: 8px 0; }
-.tc { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 12px; color: #706B61; transition: background .12s; }
-.tc:hover { background: #F0EDE6; }
-.tc.on { background: #EBE8E0; color: #1E1C18; font-weight: 600; }
-.tc-n { width: 20px; height: 20px; border-radius: 50%; background: #E6E3DA; color: #9A9588; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
-.tc.on .tc-n { background: #5E6C8A; color: #F7F6F2; }
-#tb-body { flex: 1; overflow-y: auto; padding: 20px 22px 30px; }
-#tb-body h2 { font-size: 15px; font-weight: 700; color: #1A1815; margin-bottom: 14px; }
-#tb-body h3 { font-size: 12.5px; font-weight: 700; color: #2B2922; margin: 18px 0 7px; text-transform: uppercase; letter-spacing: .04em; }
-#tb-body p { font-size: 13px; line-height: 1.67; color: #4A4640; margin-bottom: 10px; }
-#tb-body pre { background: #F0EDE6; border-radius: 8px; padding: 11px 13px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: #2B2922; overflow-x: auto; margin-bottom: 11px; border: 1px solid #E4E1D8; }
-.tb-note { background: #EAF0E7; border-left: 3px solid #5E8A6B; border-radius: 0 8px 8px 0; padding: 9px 13px; font-size: 12.5px; color: #364836; margin-bottom: 10px; line-height: 1.55; }
+#tb-nav { width: 170px; flex: none; border-right: 1px solid #EAE7DF; display: flex; flex-direction: column; overflow: hidden; }
+#tb-nav-head { flex: none; padding: 10px 13px 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #9A9588; border-bottom: 1px solid #EAE7DF; }
+#tb-toc-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+#tb-toc-empty { padding: 16px 13px; font-size: 12px; color: #B0AB9F; line-height: 1.5; }
+.toc-item { display: flex; align-items: flex-start; gap: 7px; padding: 6px 12px; cursor: pointer; font-size: 12px; color: #706B61; line-height: 1.4; border: none; background: none; width: 100%; text-align: left; transition: background .12s; }
+.toc-item:hover { background: #F0EDE6; }
+.toc-item.on { background: #EBE8E0; color: #1E1C18; font-weight: 600; }
+.toc-n { width: 18px; height: 18px; border-radius: 50%; background: #E6E3DA; color: #9A9588; font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; margin-top: 1px; }
+.toc-item.on .toc-n { background: #5E6C8A; color: #F7F6F2; }
+#tb-reader { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#tb-toolbar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 8px 13px; border-bottom: 1px solid #EAE7DF; gap: 10px; }
+#tb-chapter-title { font-size: 12px; font-weight: 600; color: #2B2922; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#tb-progress-strip { flex: none; height: 3px; background: #EAE7DF; }
+#tb-progress-fill { height: 100%; background: #5E6C8A; width: 0%; transition: width .4s; }
+#tb-viewer-wrap { flex: 1; position: relative; overflow: hidden; }
+#tb-viewer { position: absolute; inset: 0; width: 100%; height: 100%; }
+#tb-dropzone { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #FBFAF6; z-index: 10; cursor: pointer; transition: background .15s; }
+#tb-dropzone.drag-over { background: #F0EDE6; }
+#tb-dropzone.hidden { display: none; }
+.dz-border { position: absolute; inset: 16px; border: 2px dashed #D4D0C6; border-radius: 9px; pointer-events: none; }
+.dz-icon { font-size: 28px; }
+.dz-label { font-size: 13px; font-weight: 600; color: #2B2922; }
+.dz-sub { font-size: 11.5px; color: #9A9588; text-align: center; max-width: 200px; line-height: 1.5; }
 
 /* ── Save btn ── */
 .btn-save { display: flex; align-items: center; gap: 6px; border: none; background: #5E6C8A; color: #F7F6F2; padding: 6px 13px; border-radius: 8px; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: 12.5px; font-weight: 600; transition: background .15s; }
@@ -227,16 +238,47 @@ html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', s
 
     </div>
 
-    <!-- Textbook -->
+    <!-- ePub Reader -->
     <div class="panel" id="tb">
-      <div id="tb-nav"></div>
-      <div id="tb-body"></div>
+      <div id="tb-nav">
+        <div id="tb-nav-head">Contents</div>
+        <div id="tb-toc-list">
+          <div id="tb-toc-empty">Drop your ePub to see chapters</div>
+        </div>
+      </div>
+      <div id="tb-reader">
+        <div id="tb-toolbar">
+          <span id="tb-chapter-title">No book loaded</span>
+          <div style="display:flex;gap:7px">
+            <button class="btn-ghost" id="tb-prev" disabled onclick="epubPrev()">← Prev</button>
+            <button class="btn-ghost" id="tb-next" disabled onclick="epubNext()">Next →</button>
+          </div>
+        </div>
+        <div id="tb-progress-strip"><div id="tb-progress-fill"></div></div>
+        <div id="tb-viewer-wrap">
+          <div id="tb-dropzone"
+               onclick="document.getElementById('epub-input').click()"
+               ondragover="epubDragOver(event)"
+               ondragleave="epubDragLeave(event)"
+               ondrop="epubDrop(event)">
+            <div class="dz-border"></div>
+            <div class="dz-icon">📖</div>
+            <div class="dz-label">Drop your ePub here</div>
+            <div class="dz-sub">or click to browse — your place is saved between sessions</div>
+          </div>
+          <div id="tb-viewer"></div>
+        </div>
+      </div>
     </div>
+    <input type="file" id="epub-input" accept=".epub" style="display:none" onchange="epubLoadFile(this.files[0])">
   </div>
 </div>
 
 <!-- Pyodide — loads Python into the browser -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+<!-- epub.js — renders ePub files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 
 <script>
 'use strict';
@@ -306,113 +348,122 @@ The Silver Veil (An Caille Airgid) is the antagonist institution.
 
 Format code in triple backticks. Keep examples Moorvran-themed.`;
 
-// ── Chapter nav data ───────────────────────────────────────────
-const CHS = [
-  {id:1,t:'Getting Started'},
-  {id:2,t:'Variables & Data Types'},
-  {id:3,t:'Introducing Lists'},
-  {id:4,t:'Working with Lists'},
-  {id:5,t:'If Statements'},
-  {id:6,t:'Dictionaries'},
-  {id:7,t:'User Input & While Loops'},
-  {id:8,t:'Functions'},
-  {id:9,t:'Classes'},
-  {id:10,t:'Files & Exceptions'},
-  {id:11,t:'Testing'},
-];
+// ── ePub Reader ────────────────────────────────────────────────
+let epubBook      = null;
+let epubRendition = null;
+let epubToc       = [];
+const EPUB_KEY    = 'moorvran_epub_cfi';
 
-const CONT = {
-  1:[
-    {t:'p',s:'Python runs code top to bottom, one line at a time. The simplest program is a single print statement.'},
-    {t:'code',s:'print("Oswin Voss enters Dún Eagla.")'},
-    {t:'p',s:'Save the file with a .py extension and run it. That string appears in the terminal. That\'s your first program.'},
-    {t:'note',s:'PCC3 Ch.1 — Installing Python, running your first program, fixing common setup errors.'},
-  ],
-  2:[
-    {t:'p',s:'A variable is a named container. Python figures out the type from what you assign.'},
-    {t:'code',s:'name   = "Oswin Voss"   # string\nhealth = 30             # integer\nalive  = True           # boolean'},
-    {t:'h3',s:'f-strings'},
-    {t:'p',s:'Prefix a string with f and put variable names in curly braces to embed them in output.'},
-    {t:'code',s:'print(f"{name} has {health} HP.")'},
-    {t:'note',s:'PCC3 Ch.2 — Variables, strings, integers, booleans, comments, the Zen of Python.'},
-  ],
-  3:[
-    {t:'p',s:'A list holds multiple values in order, inside square brackets, separated by commas.'},
-    {t:'code',s:'spell_list = ["Fireball", "Heal Wounds", "Magic Missile"]'},
-    {t:'h3',s:'Indexing'},
-    {t:'p',s:'Lists are zero-indexed. First item is [0], last is [-1].'},
-    {t:'code',s:'print(spell_list[0])   # Fireball\nprint(spell_list[-1])  # Magic Missile'},
-    {t:'h3',s:'Modifying'},
-    {t:'code',s:'spell_list.append("Ice Bolt")       # add to end\nspell_list.insert(1, "Shield")     # add at index\nspell_list.remove("Heal Wounds")   # remove by value\nspell_list.pop(0)                  # remove by index'},
-    {t:'note',s:'PCC3 Ch.3 — Lists, indexing, append, insert, remove, pop, sort, reverse.'},
-  ],
-  4:[
-    {t:'h3',s:'for loops'},
-    {t:'p',s:'A for loop runs a block of code once for every item in a list. The variable after for takes each value in turn.'},
-    {t:'code',s:'floor_enemies = ["Goblin Scout", "Goblin Grunt", "Goblin Shaman"]\n\nfor enemy in floor_enemies:\n    print(f"Voss faces: {enemy}")'},
-    {t:'p',s:'The colon after the for line is required. The indented block runs once per item. Unindented code after the loop runs once when the list ends.'},
-    {t:'h3',s:'range()'},
-    {t:'p',s:'range() generates a sequence of numbers. range(5) gives 0–4. range(1, 4) gives 1, 2, 3.'},
-    {t:'code',s:'for round_num in range(1, 4):\n    print(f"--- Round {round_num} ---")'},
-    {t:'h3',s:'Slices'},
-    {t:'p',s:'A slice extracts part of a list. list[start:end] — start inclusive, end exclusive.'},
-    {t:'code',s:'upper_floor = floor_enemies[0:2]   # first two\nall_enemies = floor_enemies[:]     # full copy'},
-    {t:'h3',s:'Useful list operations'},
-    {t:'code',s:'len(floor_enemies)       # count: 3\nfloor_enemies.sort()     # sort in place\nfloor_enemies.reverse()  # reverse in place\nsorted(floor_enemies)    # sorted copy, original unchanged\nmin([8, 15, 12])         # 8\nmax([8, 15, 12])         # 15\nsum([8, 15, 12])         # 35'},
-    {t:'note',s:'PCC3 Ch.4 — for loops, range(), slices, list operations, tuples, PEP 8 style.'},
-  ],
-  5:[
-    {t:'p',s:'if statements let code take different paths. The indented block runs only when the condition is True.'},
-    {t:'code',s:'if health <= 0:\n    print("Voss has fallen.")\nelif health < 10:\n    print("Voss is critically wounded.")\nelse:\n    print("Voss stands firm.")'},
-    {t:'h3',s:'Comparison operators'},
-    {t:'code',s:'==  equal to          !=  not equal\n>   greater than      <   less than\n>=  greater or equal  <=  less or equal'},
-    {t:'h3',s:'Checking list membership'},
-    {t:'code',s:'if "Fireball" in spell_list:\n    print("Fireball ready.")\n\nif "Ice Bolt" not in spell_list:\n    print("Ice Bolt not learned.")'},
-    {t:'note',s:'PCC3 Ch.5 — if, elif, else, comparisons, boolean expressions, in, not in.'},
-  ],
-  6:[
-    {t:'p',s:'A dictionary stores key-value pairs. Access items by name (key), not position.'},
-    {t:'code',s:'goblin = {\n    "name":    "Goblin Scout",\n    "health":  15,\n    "attack":  8,\n    "defense": 3\n}'},
-    {t:'h3',s:'Accessing and modifying'},
-    {t:'code',s:'goblin["health"]               # 15\ngoblin["loot"] = "iron dagger" # add key\ndel goblin["loot"]             # remove key'},
-    {t:'h3',s:'Looping through a dict'},
-    {t:'code',s:'for stat, value in goblin.items():\n    print(f"{stat}: {value}")'},
-    {t:'note',s:'PCC3 Ch.6 — Dictionaries, .items(), .keys(), .values(), nesting.'},
-  ],
-  7:[
-    {t:'p',s:'input() pauses and waits for typing. It always returns a string — convert with int() if you need a number.'},
-    {t:'code',s:'action = input("What do you do? > ")\nprint(f"You chose: {action}")'},
-    {t:'h3',s:'while loops'},
-    {t:'p',s:'while loops repeat as long as a condition is True. This is the game loop — keep running until the player quits or Voss falls.'},
-    {t:'code',s:'while health > 0:\n    action = input("> ")\n    if action == "quit":\n        break'},
-    {t:'note',s:'PCC3 Ch.7 — input(), int() conversion, while loops, break, continue, flags.\n\nNote: input() in this browser IDE uses a popup prompt. Works fine for testing.'},
-  ],
-  8:[
-    {t:'p',s:'A function is a named, reusable block of code. def defines it. Call it by name. return sends a value back.'},
-    {t:'code',s:'def roll_attack(attack_stat, defense_stat):\n    import random\n    roll = random.randint(1, 50)\n    if roll <= attack_stat:\n        raw = 10\n        reduction = max(0.20, 1 - defense_stat / 50)\n        return int(raw * reduction)\n    return 0\n\ndamage = roll_attack(17, 5)\nprint(f"Voss deals {damage} damage.")'},
-    {t:'h3',s:'Default parameters'},
-    {t:'code',s:'def heal(amount, target_health, max_hp=30):\n    return min(target_health + amount, max_hp)'},
-    {t:'note',s:'PCC3 Ch.8 — Functions, parameters, return, default values, keyword args, importing modules.'},
-  ],
-  9:[
-    {t:'p',s:'A class is a blueprint for objects. Each object has its own data (attributes) and behaviour (methods).'},
-    {t:'code',s:'class Enemy:\n    def __init__(self, name, health, attack, defense):\n        self.name    = name\n        self.health  = health\n        self.attack  = attack\n        self.defense = defense\n\n    def is_alive(self):\n        return self.health > 0\n\ngoblin = Enemy("Goblin Scout", 15, 8, 3)\nprint(goblin.name, goblin.is_alive())'},
-    {t:'p',s:'self always refers to the specific object. It comes first in every method but you don\'t pass it when calling.'},
-    {t:'note',s:'PCC3 Ch.9 — Classes, __init__, self, attributes, methods, inheritance.'},
-  ],
-  10:[
-    {t:'p',s:'Python can read and write files. Use the with statement — it closes the file automatically.'},
-    {t:'code',s:'import json\n\n# Save\nstate = {"health": 30, "floor": 1}\nwith open("save.json", "w") as f:\n    json.dump(state, f)\n\n# Load\nwith open("save.json", "r") as f:\n    loaded = json.load(f)\nprint(loaded["health"])  # 30'},
-    {t:'h3',s:'Handling errors'},
-    {t:'code',s:'try:\n    with open("save.json", "r") as f:\n        data = json.load(f)\nexcept FileNotFoundError:\n    print("No save file. Starting new game.")'},
-    {t:'note',s:'PCC3 Ch.10 — Reading/writing files, json, try/except, FileNotFoundError.'},
-  ],
-  11:[
-    {t:'p',s:'Tests are code that checks your code. Python\'s unittest module runs assertions — statements that must be True.'},
-    {t:'code',s:'import unittest\n\nclass TestCombat(unittest.TestCase):\n\n    def test_zero_attack_no_damage(self):\n        result = roll_attack(0, 5)\n        self.assertEqual(result, 0)\n\nunittest.main()'},
-    {t:'note',s:'PCC3 Ch.11 — unittest, TestCase, assertEqual, assertIn, assertRaises.'},
-  ],
-};
+function epubDragOver(e) {
+  e.preventDefault();
+  document.getElementById('tb-dropzone').classList.add('drag-over');
+}
+function epubDragLeave() {
+  document.getElementById('tb-dropzone').classList.remove('drag-over');
+}
+function epubDrop(e) {
+  e.preventDefault();
+  document.getElementById('tb-dropzone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.epub')) epubLoadFile(file);
+}
+function epubLoadFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => epubOpen(e.target.result);
+  r.readAsArrayBuffer(file);
+}
+
+function epubOpen(buffer) {
+  if (epubBook) epubBook.destroy();
+  document.getElementById('tb-chapter-title').textContent = 'Loading…';
+
+  epubBook = ePub(buffer);
+  epubRendition = epubBook.renderTo('tb-viewer', {
+    width: '100%', height: '100%', spread: 'none', flow: 'paginated',
+  });
+
+  epubRendition.themes.default({
+    body: {
+      'font-family': "Georgia, serif",
+      'font-size': '15px', 'line-height': '1.75',
+      'color': '#2B2922', 'padding': '16px 36px !important',
+      'max-width': '640px', 'margin': '0 auto',
+    },
+    'h1,h2,h3,h4': { 'font-family': "'Hanken Grotesk', sans-serif", 'color': '#1A1815' },
+    'pre,code': { 'font-family': "'JetBrains Mono', monospace", 'font-size': '13px', 'background': '#F0EDE6', 'border-radius': '4px', 'padding': '2px 5px' },
+    'pre': { 'padding': '10px 14px', 'line-height': '1.6', 'overflow-x': 'auto' },
+  });
+
+  // Restore saved position or display from start
+  const saved = localStorage.getItem(EPUB_KEY);
+  epubRendition.display(saved || undefined);
+
+  epubBook.loaded.navigation.then(nav => {
+    epubToc = epubFlattenToc(nav.toc);
+    epubBuildToc(epubToc);
+    document.getElementById('tb-prev').disabled = false;
+    document.getElementById('tb-next').disabled = false;
+    document.getElementById('tb-dropzone').classList.add('hidden');
+  });
+
+  epubRendition.on('relocated', loc => {
+    // Save position
+    localStorage.setItem(EPUB_KEY, loc.start.cfi);
+    // Update progress
+    const pct = epubBook.locations.percentageFromCfi(loc.start.cfi);
+    if (pct !== undefined) {
+      document.getElementById('tb-progress-fill').style.width = (pct * 100).toFixed(1) + '%';
+    }
+    // Highlight current chapter in TOC
+    const href = loc.start.href;
+    const idx  = epubToc.findIndex(t => href.includes(t.href.split('#')[0]));
+    if (idx >= 0) epubSetActive(idx);
+  });
+}
+
+function epubFlattenToc(toc, depth) {
+  depth = depth || 0;
+  const out = [];
+  toc.forEach(item => {
+    out.push({ label: item.label.trim(), href: item.href, depth });
+    if (item.subitems && item.subitems.length) {
+      epubFlattenToc(item.subitems, depth + 1).forEach(s => out.push(s));
+    }
+  });
+  return out;
+}
+
+function epubBuildToc(items) {
+  const list = document.getElementById('tb-toc-list');
+  list.innerHTML = '';
+  items.forEach((item, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'toc-item';
+    btn.style.paddingLeft = (12 + item.depth * 10) + 'px';
+    btn.innerHTML = `<div class="toc-n">${i + 1}</div><span>${esc(item.label)}</span>`;
+    btn.onclick = () => { epubRendition.display(item.href); epubSetActive(i); };
+    list.appendChild(btn);
+  });
+}
+
+function epubSetActive(idx) {
+  document.querySelectorAll('.toc-item').forEach((el, i) => el.classList.toggle('on', i === idx));
+  if (epubToc[idx]) {
+    document.getElementById('tb-chapter-title').textContent = epubToc[idx].label;
+  }
+  const active = document.querySelector('.toc-item.on');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function epubPrev() { if (epubRendition) epubRendition.prev(); }
+function epubNext() { if (epubRendition) epubRendition.next(); }
+
+document.addEventListener('keydown', e => {
+  if (!epubRendition) return;
+  if (e.key === 'ArrowRight') epubNext();
+  if (e.key === 'ArrowLeft')  epubPrev();
+});
 
 // ── Setup ──────────────────────────────────────────────────────
 function go() {
@@ -432,12 +483,10 @@ document.getElementById('ki').addEventListener('keydown', ev => { if (ev.key ===
 // ── Init ───────────────────────────────────────────────────────
 function initApp() {
   initEditor();
-  buildNav();
-  loadCh(4);
   initPyodide();
   const msg = API_KEY
     ? "Ready. Chapter 4 — for loops. What do you need?"
-    : "IDE open (no API key — tutor disabled). Editor and textbook work normally.";
+    : "IDE open (no API key — tutor disabled). Editor and ePub reader work normally.";
   aiMsg(msg);
 }
 
@@ -635,43 +684,6 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Textbook ───────────────────────────────────────────────────
-function buildNav() {
-  const nav = document.getElementById('tb-nav');
-  CHS.forEach(c => {
-    const d = document.createElement('div');
-    d.className = 'tc' + (c.id === activeCh ? ' on' : '');
-    d.dataset.id = c.id;
-    d.innerHTML = `<div class="tc-n">${c.id}</div><span>${c.t}</span>`;
-    d.addEventListener('click', () => loadCh(c.id));
-    nav.appendChild(d);
-  });
-}
-
-function loadCh(id) {
-  activeCh = id;
-  document.querySelectorAll('.tc').forEach(el => el.classList.toggle('on', +el.dataset.id === id));
-  document.getElementById('chn').textContent  = id;
-  document.getElementById('chn2').textContent = id;
-  document.getElementById('pf').style.width   = Math.round(id / 11 * 100) + '%';
-
-  const ch   = CHS.find(c => c.id === id);
-  const body = document.getElementById('tb-body');
-  body.innerHTML = `<h2>Chapter ${id}: ${ch.t}</h2>`;
-  (CONT[id] || []).forEach(b => {
-    let el;
-    if      (b.t === 'p')    { el = document.createElement('p');   el.textContent = b.s; }
-    else if (b.t === 'h3')   { el = document.createElement('h3');  el.textContent = b.s; }
-    else if (b.t === 'code') { el = document.createElement('pre'); el.textContent = b.s; }
-    else if (b.t === 'note') {
-      el = document.createElement('div');
-      el.className = 'tb-note';
-      el.innerHTML = `<strong>Note —</strong> ${esc(b.s)}`;
-    }
-    if (el) body.appendChild(el);
-  });
-  body.scrollTop = 0;
-}
 </script>
 </body>
 </html>
