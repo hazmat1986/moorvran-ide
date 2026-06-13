@@ -151,6 +151,10 @@ html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', s
   height: 100%;
 }
 
+.prog-track { width: 90px; height: 5px; border-radius: 3px; background: #D8D4C9; overflow: hidden; }
+.prog-fill  { height: 100%; background: #5E6C8A; border-radius: 3px; transition: width .4s; width: 0%; }
+.prog-label { font-size: 11.5px; color: #9A9588; min-width: 32px; }
+
 /* ── Drop zone (shown before book loaded) ── */
 #dropzone {
   position: absolute;
@@ -206,6 +210,8 @@ html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', s
       <span class="sub">Mockup — drop any .epub to test</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
+      <div class="prog-track"><div class="prog-fill" id="progress-fill"></div></div>
+      <span class="prog-label" id="prog-label">0%</span>
       <button class="btn-nav" id="btn-prev" disabled onclick="prevPage()">← Prev</button>
       <button class="btn-nav" id="btn-next" disabled onclick="nextPage()">Next →</button>
     </div>
@@ -331,6 +337,9 @@ function openBook(arrayBuffer) {
 
   rendition.display();
 
+  // Generate locations for percentage tracking (runs in background)
+  book.locations.generate(1024);
+
   // Build TOC once navigation loads
   book.loaded.navigation.then(nav => {
     tocItems = flattenToc(nav.toc);
@@ -412,10 +421,12 @@ function nextPage() {
 
 // ── Progress ──────────────────────────────────────────────────
 function updateProgress(location) {
-  if (!book || !book.locations) return;
+  if (!book || !book.locations || !book.locations.total) return;
   const pct = book.locations.percentageFromCfi(location.start.cfi);
   if (pct !== undefined) {
-    document.getElementById('progress-fill').style.width = (pct * 100).toFixed(1) + '%';
+    const pctRounded = Math.round(pct * 100);
+    document.getElementById('progress-fill').style.width = pctRounded + '%';
+    document.getElementById('prog-label').textContent    = pctRounded + '%';
   }
 }
 
