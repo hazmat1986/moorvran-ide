@@ -254,7 +254,8 @@ function buildToc(doc) {
 
       const numEl = document.createElement('div');
       numEl.className = 'toc-n';
-      numEl.textContent = chNum;
+      const _m = item.label.match(/^(?:chapter\s+)?(\d+)/i);
+      numEl.textContent = _m ? _m[1] : chNum;
 
       const labelEl = document.createElement('span');
       labelEl.className = 'toc-ch-label';
