@@ -2,432 +2,436 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Moorvran — ePub Reader Mockup</title>
+<title>Moorvran — ePub Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', sans-serif; color: #34322C; overflow: hidden; }
-::-webkit-scrollbar { width: 7px; }
-::-webkit-scrollbar-thumb { background: #D4D0C6; border-radius: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#ECEAE3;font-family:'Hanken Grotesk',sans-serif;color:#34322C;overflow:hidden}
+::-webkit-scrollbar{width:7px}::-webkit-scrollbar-thumb{background:#D4D0C6;border-radius:4px}::-webkit-scrollbar-track{background:transparent}
 
-#shell {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 10px;
-  gap: 9px;
-}
+#shell{display:flex;flex-direction:column;height:100vh;padding:10px;gap:9px}
 
-/* ── Top bar ── */
-#topbar {
-  flex: none;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px;
-}
-.logo { width: 24px; height: 24px; border-radius: 6px; background: #5E6C8A; display: flex; align-items: center; justify-content: center; color: #F7F6F2; font-size: 12px; font-weight: 700; flex: none; }
-.title { font-size: 13.5px; font-weight: 600; color: #2B2922; }
-.sub   { font-size: 12px; color: #9A9588; }
+/* top bar */
+#topbar{flex:none;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.logo{width:24px;height:24px;border-radius:6px;background:#5E6C8A;display:flex;align-items:center;justify-content:center;color:#F7F6F2;font-size:12px;font-weight:700;flex:none}
+.t-title{font-size:13.5px;font-weight:600;color:#2B2922}
+.t-sub{font-size:12px;color:#9A9588}
+.t-ch{font-size:12px;font-weight:600;color:#5E6C8A;min-width:80px;text-align:right}
 
-/* ── Nav buttons ── */
-.btn-nav {
-  display: flex; align-items: center; gap: 6px;
-  border: 1px solid #E0DDD5; background: #FBFAF6; color: #4A4640;
-  padding: 5px 12px; border-radius: 8px;
-  cursor: pointer; font-family: 'Hanken Grotesk', sans-serif;
-  font-size: 12.5px; font-weight: 500;
-  transition: background .15s;
-}
-.btn-nav:hover { background: #F0EDE6; }
-.btn-nav:disabled { opacity: .4; cursor: default; }
+/* buttons */
+.btn{border:1px solid #E0DDD5;background:#FBFAF6;color:#4A4640;padding:5px 11px;border-radius:8px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;font-size:12px;font-weight:500;transition:background .15s;display:flex;align-items:center;gap:5px}
+.btn:hover{background:#F0EDE6}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-accent{background:#5E6C8A;color:#F7F6F2;border-color:#5E6C8A}
+.btn-accent:hover{background:#536079}
 
-/* ── Panel ── */
-#reader-panel {
-  flex: 1;
-  min-height: 0;
-  background: #FBFAF6;
-  border: 1px solid #E0DDD5;
-  border-radius: 11px;
-  box-shadow: 0 1px 3px rgba(30,28,22,.05);
-  display: flex;
-  overflow: hidden;
-}
+/* search bar */
+#search-wrap{position:relative;display:flex;align-items:center}
+#search-input{border:1px solid #E0DDD5;background:#FBFAF6;border-radius:8px;padding:5px 30px 5px 10px;font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:#2B2922;outline:none;width:180px;transition:border .15s}
+#search-input:focus{border-color:#5E6C8A}
+#search-input::placeholder{color:#B0AB9F}
+#search-clear{position:absolute;right:8px;background:none;border:none;cursor:pointer;color:#9A9588;font-size:14px;display:none;line-height:1}
 
-/* ── Sidebar ── */
-#toc-sidebar {
-  width: 200px;
-  flex: none;
-  border-right: 1px solid #EAE7DF;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-#toc-head {
-  flex: none;
-  padding: 11px 13px 9px;
-  border-bottom: 1px solid #EAE7DF;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: #9A9588;
-}
-#toc-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px 0;
-}
-.toc-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #706B61;
-  line-height: 1.4;
-  transition: background .12s;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-.toc-item:hover { background: #F0EDE6; }
-.toc-item.active { background: #EBE8E0; color: #1E1C18; font-weight: 600; }
-.toc-num {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #E6E3DA; color: #9A9588;
-  font-size: 9.5px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex: none; margin-top: 1px;
-}
-.toc-item.active .toc-num { background: #5E6C8A; color: #F7F6F2; }
+/* search results panel */
+#search-panel{position:absolute;top:52px;right:10px;width:340px;background:#FBFAF6;border:1px solid #E0DDD5;border-radius:11px;box-shadow:0 4px 16px rgba(30,28,22,.12);z-index:50;display:none;flex-direction:column;max-height:360px}
+#search-panel.open{display:flex}
+#search-panel-head{flex:none;padding:10px 13px;border-bottom:1px solid #EAE7DF;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#9A9588}
+#search-results{flex:1;overflow-y:auto;padding:6px 0}
+.sr{padding:8px 13px;cursor:pointer;border-bottom:1px solid #F0EDE6;transition:background .12s}
+.sr:hover{background:#F0EDE6}
+.sr:last-child{border-bottom:none}
+.sr-ch{font-size:10.5px;font-weight:600;color:#9A9588;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.sr-text{font-size:12.5px;color:#2B2922;line-height:1.5}
+.sr-text mark{background:#FDE68A;border-radius:2px;padding:0 2px}
+#search-empty{padding:20px 13px;font-size:12.5px;color:#9A9588;text-align:center}
 
-/* ── Main reading area ── */
-#reader-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
+/* main panel */
+#panel{flex:1;min-height:0;background:#FBFAF6;border:1px solid #E0DDD5;border-radius:11px;box-shadow:0 1px 3px rgba(30,28,22,.05);display:flex;overflow:hidden}
 
-/* reading toolbar */
-#reader-toolbar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 16px;
-  border-bottom: 1px solid #EAE7DF;
-  gap: 12px;
-}
-#chapter-title {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #2B2922;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* sidebar */
+#sidebar{width:195px;flex:none;border-right:1px solid #EAE7DF;display:flex;flex-direction:column;overflow:hidden}
+#sidebar-tabs{flex:none;display:flex;border-bottom:1px solid #EAE7DF}
+.stab{flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9A9588;cursor:pointer;transition:background .12s;border:none;background:none}
+.stab:hover{background:#F0EDE6}
+.stab.on{color:#5E6C8A;border-bottom:2px solid #5E6C8A}
+#toc-list,#bm-list{flex:1;overflow-y:auto;padding:6px 0;display:none}
+#toc-list.on,#bm-list.on{display:block}
+.toc-item{display:flex;align-items:flex-start;gap:7px;padding:6px 11px;cursor:pointer;font-size:12px;color:#706B61;line-height:1.4;border:none;background:none;width:100%;text-align:left;transition:background .12s}
+.toc-item:hover{background:#F0EDE6}
+.toc-item.on{background:#EBE8E0;color:#1E1C18;font-weight:600}
+.toc-n{width:17px;height:17px;border-radius:50%;background:#E6E3DA;color:#9A9588;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.toc-item.on .toc-n{background:#5E6C8A;color:#F7F6F2}
+.bm-item{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;font-size:12px;color:#2B2922;border-bottom:1px solid #F0EDE6;cursor:pointer;transition:background .12s;gap:6px}
+.bm-item:hover{background:#F0EDE6}
+.bm-label{flex:1;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bm-del{flex:none;background:none;border:none;cursor:pointer;color:#C0504A;font-size:14px;padding:0 2px;line-height:1}
+.bm-del:hover{color:#A03030}
+#bm-empty{padding:20px 13px;font-size:12px;color:#B0AB9F;text-align:center}
 
-/* epub viewport */
-#viewer-wrap {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-#viewer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
+/* reader area */
+#reader-area{flex:1;display:flex;flex-direction:column;min-width:0}
+#reader-toolbar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid #EAE7DF;gap:10px}
+#chapter-title{font-size:12px;font-weight:600;color:#2B2922;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#viewer-wrap{flex:1;position:relative;overflow:hidden}
+#viewer{position:absolute;inset:0;width:100%;height:100%}
 
-.prog-track { width: 90px; height: 5px; border-radius: 3px; background: #D8D4C9; overflow: hidden; }
-.prog-fill  { height: 100%; background: #5E6C8A; border-radius: 3px; transition: width .4s; width: 0%; }
-.prog-label { font-size: 11.5px; color: #9A9588; min-width: 32px; }
-
-/* ── Drop zone (shown before book loaded) ── */
-#dropzone {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: #FBFAF6;
-  z-index: 10;
-  cursor: pointer;
-  transition: background .15s;
-}
-#dropzone.drag-over { background: #F0EDE6; }
-#dropzone.hidden { display: none; }
-.dz-icon {
-  width: 52px; height: 52px; border-radius: 12px;
-  background: #EAE7DF; display: flex; align-items: center; justify-content: center;
-  font-size: 24px; color: #5E6C8A;
-}
-.dz-label { font-size: 13.5px; font-weight: 600; color: #2B2922; }
-.dz-sub   { font-size: 12px; color: #9A9588; }
-.dz-border {
-  position: absolute; inset: 20px;
-  border: 2px dashed #D4D0C6; border-radius: 10px;
-  pointer-events: none;
-}
-#file-input { display: none; }
-
-/* ── Progress strip ── */
-#progress-strip {
-  flex: none;
-  height: 3px;
-  background: #EAE7DF;
-}
-#progress-fill {
-  height: 100%;
-  background: #5E6C8A;
-  width: 0%;
-  transition: width .3s;
-}
+/* drop zone */
+#dropzone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;background:#FBFAF6;z-index:10;cursor:pointer;transition:background .15s}
+#dropzone.drag-over{background:#F0EDE6}
+#dropzone.hidden{display:none}
+.dz-border{position:absolute;inset:16px;border:2px dashed #D4D0C6;border-radius:9px;pointer-events:none}
+.dz-icon{font-size:32px}
+.dz-label{font-size:13.5px;font-weight:600;color:#2B2922}
+.dz-sub{font-size:12px;color:#9A9588;text-align:center;max-width:220px;line-height:1.5}
+#file-input{display:none}
 </style>
 </head>
 <body>
 <div id="shell">
 
-  <!-- Top bar -->
   <div id="topbar">
     <div style="display:flex;align-items:center;gap:10px">
       <div class="logo">M</div>
-      <span class="title">ePub Reader</span>
-      <span class="sub">Mockup — drop any .epub to test</span>
+      <span class="t-title">ePub Reader</span>
+      <span class="t-sub" id="book-title">No book loaded</span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span class="prog-label" id="prog-label">Ch — / —</span>
-      <button class="btn-nav" id="btn-prev" disabled onclick="prevPage()">← Prev</button>
-      <button class="btn-nav" id="btn-next" disabled onclick="nextPage()">Next →</button>
+    <div style="display:flex;align-items:center;gap:7px">
+      <button class="btn" onclick="fontSize(-1)" title="Smaller text">A−</button>
+      <button class="btn" onclick="fontSize(1)"  title="Larger text">A+</button>
+      <button class="btn" id="btn-bm" onclick="addBookmark()" title="Bookmark this page">☆</button>
+      <div id="search-wrap">
+        <input type="text" id="search-input" placeholder="Search book…" oninput="onSearchInput()" onkeydown="if(event.key==='Enter')doSearch()">
+        <button id="search-clear" onclick="clearSearch()">×</button>
+      </div>
+      <span class="t-ch" id="ch-counter">—</span>
     </div>
   </div>
 
-  <!-- Reader panel -->
-  <div id="reader-panel">
+  <!-- Search results panel -->
+  <div id="search-panel">
+    <div id="search-panel-head">Search results</div>
+    <div id="search-results"></div>
+  </div>
 
-    <!-- TOC sidebar -->
-    <div id="toc-sidebar">
-      <div id="toc-head">Contents</div>
-      <div id="toc-list">
-        <div style="padding:20px 14px;font-size:12px;color:#9A9588;">
-          Load a book to see chapters
-        </div>
+  <div id="panel">
+    <div id="sidebar">
+      <div id="sidebar-tabs">
+        <button class="stab on" id="tab-toc" onclick="showTab('toc')">Contents</button>
+        <button class="stab"    id="tab-bm"  onclick="showTab('bm')">Bookmarks</button>
+      </div>
+      <div id="toc-list" class="on">
+        <div style="padding:16px 13px;font-size:12px;color:#B0AB9F">Drop an ePub to load</div>
+      </div>
+      <div id="bm-list">
+        <div id="bm-empty">No bookmarks yet.<br>Click ☆ to add one.</div>
       </div>
     </div>
 
-    <!-- Main area -->
-    <div id="reader-main">
+    <div id="reader-area">
       <div id="reader-toolbar">
-        <span id="chapter-title">No book loaded</span>
+        <span id="chapter-title">—</span>
+        <div style="display:flex;gap:7px">
+          <button class="btn" id="btn-prev" disabled onclick="epubPrev()">← Prev</button>
+          <button class="btn" id="btn-next" disabled onclick="epubNext()">Next →</button>
+        </div>
       </div>
-      <div id="progress-strip"><div id="progress-fill"></div></div>
       <div id="viewer-wrap">
-
-        <!-- Drop zone -->
-        <div id="dropzone" onclick="document.getElementById('file-input').click()"
-             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div id="dropzone"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="drop(event)">
           <div class="dz-border"></div>
           <div class="dz-icon">📖</div>
           <div class="dz-label">Drop your ePub here</div>
-          <div class="dz-sub">or click to browse</div>
+          <div class="dz-sub">or click to browse — your place is saved between sessions</div>
         </div>
-
-        <!-- epub.js renders here -->
         <div id="viewer"></div>
-
       </div>
     </div>
-
   </div>
 
 </div>
-
 <input type="file" id="file-input" accept=".epub" onchange="loadFile(this.files[0])">
 
 <script>
 'use strict';
 
+const KEY_CFI = 'moorvran_cfi';
+const KEY_BMS = 'moorvran_bms';
+const KEY_FS  = 'moorvran_fs';
+
 let book       = null;
 let rendition  = null;
 let tocItems   = [];
-let currentIdx = 0;
+let bookmarks  = [];
+let fontScale  = 100;
+let searching  = false;
 
-// ── Drag and drop ──────────────────────────────────────────────
-function onDragOver(e) {
-  e.preventDefault();
-  document.getElementById('dropzone').classList.add('drag-over');
-}
-function onDragLeave(e) {
-  document.getElementById('dropzone').classList.remove('drag-over');
-}
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropzone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.endsWith('.epub')) loadFile(file);
-}
+// ── Load ────────────────────────────────────────────────────────
+function dragOver(e) { e.preventDefault(); document.getElementById('dropzone').classList.add('drag-over'); }
+function dragLeave()  { document.getElementById('dropzone').classList.remove('drag-over'); }
+function drop(e)      { e.preventDefault(); dragLeave(); const f = e.dataTransfer.files[0]; if (f && f.name.endsWith('.epub')) loadFile(f); }
 
-// ── Load epub ──────────────────────────────────────────────────
 function loadFile(file) {
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => openBook(e.target.result);
-  reader.readAsArrayBuffer(file);
+  const r = new FileReader();
+  r.onload = e => openBook(e.target.result, file.name.replace('.epub',''));
+  r.readAsArrayBuffer(file);
 }
 
-function openBook(arrayBuffer) {
-  // Clean up previous
+function openBook(buffer, name) {
   if (book) book.destroy();
-
-  document.getElementById('dropzone').classList.add('hidden');
+  document.getElementById('book-title').textContent = name || 'Book';
   document.getElementById('chapter-title').textContent = 'Loading…';
 
-  book = ePub(arrayBuffer);
+  book = ePub(buffer);
 
   rendition = book.renderTo('viewer', {
-    width:  '100%',
-    height: '100%',
+    width: '100%', height: '100%',
+    flow: 'scrolled-doc',
     spread: 'none',
-    flow:   'scrolled-doc',
   });
 
-  // Style the iframe content to match IDE aesthetic
-  rendition.themes.default({
-    body: {
-      'font-family': "'Georgia', serif",
-      'font-size':   '15px',
-      'line-height': '1.75',
-      'color':       '#2B2922',
-      'padding':     '20px 40px !important',
-      'max-width':   '680px',
-      'margin':      '0 auto',
-    },
-    'h1,h2,h3,h4': {
-      'font-family': "'Hanken Grotesk', sans-serif",
-      'color':       '#1A1815',
-    },
-    'pre,code': {
-      'font-family': "'JetBrains Mono', monospace",
-      'font-size':   '13px',
-      'background':  '#F0EDE6',
-      'border-radius': '6px',
-      'padding':     '2px 6px',
-    },
-    'pre': {
-      'padding':     '12px 16px',
-      'line-height': '1.6',
-      'overflow-x':  'auto',
-    },
-  });
+  // Apply saved font size
+  const savedFs = localStorage.getItem(KEY_FS);
+  if (savedFs) { fontScale = +savedFs; }
+  applyFontSize();
 
-  rendition.display();
+  // Display from saved position or start
+  const saved = localStorage.getItem(KEY_CFI);
+  rendition.display(saved || undefined).catch(() => rendition.display());
 
-  // Build TOC once navigation loads
+  // Build TOC
   book.loaded.navigation.then(nav => {
     tocItems = flattenToc(nav.toc);
-    buildToc(tocItems);
+    buildToc();
     document.getElementById('btn-prev').disabled = false;
     document.getElementById('btn-next').disabled = false;
+    document.getElementById('btn-bm').disabled   = false;
+    document.getElementById('dropzone').classList.add('hidden');
+  }).catch(console.error);
+
+  // Track location
+  rendition.on('relocated', loc => {
+    try {
+      if (!loc || !loc.start) return;
+      localStorage.setItem(KEY_CFI, loc.start.cfi);
+      highlightToc(loc.start.href);
+    } catch(e) {}
   });
 
-  // Update chapter title on location change
-  rendition.on('relocated', location => {
-    updateProgress(location);
-    highlightCurrentChapter(location);
-  });
+  // Load bookmarks
+  try { bookmarks = JSON.parse(localStorage.getItem(KEY_BMS) || '[]'); } catch(e) { bookmarks = []; }
+  renderBookmarks();
 }
 
-// ── TOC helpers ───────────────────────────────────────────────
+// ── TOC ─────────────────────────────────────────────────────────
 function flattenToc(toc, depth) {
   depth = depth || 0;
-  const items = [];
-  toc.forEach(item => {
-    items.push({ label: item.label.trim(), href: item.href, depth });
+  const out = [];
+  (toc || []).forEach(item => {
+    out.push({ label: item.label.trim(), href: item.href, depth });
     if (item.subitems && item.subitems.length) {
-      flattenToc(item.subitems, depth + 1).forEach(sub => items.push(sub));
+      flattenToc(item.subitems, depth + 1).forEach(s => out.push(s));
     }
   });
-  return items;
+  return out;
 }
 
-function buildToc(items) {
+function buildToc() {
   const list = document.getElementById('toc-list');
   list.innerHTML = '';
-  items.forEach((item, i) => {
+  const topCount = tocItems.filter(t => t.depth === 0).length;
+  tocItems.forEach((item, i) => {
     const btn = document.createElement('button');
-    btn.className = 'toc-item' + (i === 0 ? ' active' : '');
-    btn.style.paddingLeft = (12 + item.depth * 12) + 'px';
-    btn.innerHTML = `
-      <div class="toc-num">${i + 1}</div>
-      <span>${item.label}</span>
-    `;
+    btn.className = 'toc-item';
+    btn.style.paddingLeft = (11 + item.depth * 10) + 'px';
+    btn.innerHTML = `<div class="toc-n">${i + 1}</div><span>${esc(item.label)}</span>`;
     btn.onclick = () => {
-      // In scrolled mode, full href with fragment navigates to the anchor
-      rendition.display(item.href).catch(() => {
-        rendition.display(item.href.split('#')[0]);
-      });
+      rendition.display(item.href).catch(() => rendition.display(item.href.split('#')[0]));
       setActiveToc(i);
     };
     list.appendChild(btn);
   });
+  updateChCounter();
 }
 
 function setActiveToc(idx) {
-  currentIdx = idx;
-  document.querySelectorAll('.toc-item').forEach((el, i) => {
-    el.classList.toggle('active', i === idx);
-  });
-  if (tocItems[idx]) {
-    document.getElementById('chapter-title').textContent = tocItems[idx].label;
-  }
-  // Chapter counter — top-level items only
-  const topLevel = tocItems.filter(t => t.depth === 0);
-  const curTop   = tocItems.slice(0, idx + 1).filter(t => t.depth === 0).length;
-  document.getElementById('prog-label').textContent = 'Ch ' + curTop + ' / ' + topLevel.length;
-
-  const active = document.querySelector('.toc-item.active');
+  document.querySelectorAll('.toc-item').forEach((el, i) => el.classList.toggle('on', i === idx));
+  if (tocItems[idx]) document.getElementById('chapter-title').textContent = tocItems[idx].label;
+  const active = document.querySelector('.toc-item.on');
   if (active) active.scrollIntoView({ block: 'nearest' });
+  updateChCounter(idx);
 }
 
-function highlightCurrentChapter(location) {
-  const href = location.start.href;
-  const idx  = tocItems.findIndex(t => href.includes(t.href.split('#')[0]));
+function highlightToc(href) {
+  if (!href) return;
+  const idx = tocItems.findIndex(t => {
+    const base = t.href.split('#')[0];
+    return href === base || href.endsWith(base) || base.endsWith(href);
+  });
   if (idx >= 0) setActiveToc(idx);
 }
 
-// ── Navigation ────────────────────────────────────────────────
-function prevPage() {
-  if (rendition) rendition.prev();
-}
-function nextPage() {
-  if (rendition) rendition.next();
-}
-
-// ── Progress ──────────────────────────────────────────────────
-function updateProgress(location) {
-  // Chapter counter handled by setActiveToc
+function updateChCounter(idx) {
+  const topLevel = tocItems.filter(t => t.depth === 0);
+  const total = topLevel.length;
+  if (!total) { document.getElementById('ch-counter').textContent = '—'; return; }
+  if (idx === undefined) { document.getElementById('ch-counter').textContent = `— / ${total}`; return; }
+  const cur = tocItems.slice(0, idx + 1).filter(t => t.depth === 0).length;
+  document.getElementById('ch-counter').textContent = `Ch ${cur} / ${total}`;
 }
 
-// ── Keyboard navigation ───────────────────────────────────────
+// ── Sidebar tabs ────────────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('toc-list').classList.toggle('on', tab === 'toc');
+  document.getElementById('bm-list').classList.toggle('on',  tab === 'bm');
+  document.getElementById('tab-toc').classList.toggle('on',  tab === 'toc');
+  document.getElementById('tab-bm').classList.toggle('on',   tab === 'bm');
+}
+
+// ── Navigation ──────────────────────────────────────────────────
+function epubPrev() { if (rendition) rendition.prev(); }
+function epubNext() { if (rendition) rendition.next(); }
 document.addEventListener('keydown', e => {
+  if (document.activeElement === document.getElementById('search-input')) return;
   if (!rendition) return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevPage();
+  if (e.key === 'ArrowRight') epubNext();
+  if (e.key === 'ArrowLeft')  epubPrev();
 });
+
+// ── Font size ───────────────────────────────────────────────────
+function fontSize(dir) {
+  fontScale = Math.max(70, Math.min(150, fontScale + dir * 10));
+  localStorage.setItem(KEY_FS, fontScale);
+  applyFontSize();
+}
+function applyFontSize() {
+  if (!rendition) return;
+  rendition.themes.fontSize(fontScale + '%');
+}
+
+// ── Bookmarks ───────────────────────────────────────────────────
+function addBookmark() {
+  if (!rendition) return;
+  try {
+    const loc = rendition.currentLocation();
+    if (!loc || !loc.start) return;
+    const cfi   = loc.start.cfi;
+    const label = document.getElementById('chapter-title').textContent || 'Bookmark';
+    if (bookmarks.find(b => b.cfi === cfi)) return; // already bookmarked
+    bookmarks.push({ cfi, label, date: new Date().toLocaleDateString() });
+    localStorage.setItem(KEY_BMS, JSON.stringify(bookmarks));
+    renderBookmarks();
+    document.getElementById('btn-bm').textContent = '★';
+    setTimeout(() => document.getElementById('btn-bm').textContent = '☆', 1200);
+  } catch(e) {}
+}
+
+function deleteBookmark(cfi) {
+  bookmarks = bookmarks.filter(b => b.cfi !== cfi);
+  localStorage.setItem(KEY_BMS, JSON.stringify(bookmarks));
+  renderBookmarks();
+}
+
+function renderBookmarks() {
+  const list  = document.getElementById('bm-list');
+  const empty = document.getElementById('bm-empty');
+  list.querySelectorAll('.bm-item').forEach(el => el.remove());
+  if (!bookmarks.length) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  bookmarks.forEach(bm => {
+    const div = document.createElement('div');
+    div.className = 'bm-item';
+    div.innerHTML = `<span class="bm-label" title="${esc(bm.label)}">${esc(bm.label)}<br><span style="font-size:10.5px;color:#9A9588">${bm.date}</span></span><button class="bm-del" title="Remove">×</button>`;
+    div.querySelector('.bm-label').onclick = () => rendition && rendition.display(bm.cfi);
+    div.querySelector('.bm-del').onclick   = e => { e.stopPropagation(); deleteBookmark(bm.cfi); };
+    list.appendChild(div);
+  });
+}
+
+// ── Search ──────────────────────────────────────────────────────
+function onSearchInput() {
+  const val = document.getElementById('search-input').value;
+  document.getElementById('search-clear').style.display = val ? 'block' : 'none';
+  if (!val) closeSearch();
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  closeSearch();
+}
+
+function closeSearch() {
+  document.getElementById('search-panel').classList.remove('open');
+}
+
+async function doSearch() {
+  if (!book) return;
+  const query = document.getElementById('search-input').value.trim();
+  if (!query || query.length < 2) return;
+  if (searching) return;
+
+  const panel   = document.getElementById('search-panel');
+  const results = document.getElementById('search-results');
+  panel.classList.add('open');
+  results.innerHTML = '<div id="search-empty">Searching…</div>';
+  searching = true;
+
+  try {
+    const hits = [];
+    for (const item of book.spine.spineItems) {
+      try {
+        const section = await item.load(book.load.bind(book));
+        const found   = section.find ? section.find(query) : [];
+        found.forEach(h => {
+          const tocItem = tocItems.find(t => item.href.endsWith(t.href.split('#')[0]) || t.href.split('#')[0].endsWith(item.href));
+          hits.push({ cfi: h.cfi, excerpt: h.excerpt, chapter: tocItem ? tocItem.label : item.href });
+        });
+        item.unload();
+      } catch(e) {}
+      if (hits.length >= 40) break; // cap results
+    }
+
+    results.innerHTML = '';
+    if (!hits.length) {
+      results.innerHTML = `<div id="search-empty">No results for "${esc(query)}"</div>`;
+    } else {
+      document.getElementById('search-panel-head').textContent = `${hits.length} result${hits.length !== 1 ? 's' : ''}`;
+      hits.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'sr';
+        const excerpt = h.excerpt ? h.excerpt.replace(new RegExp(query, 'gi'), m => `<mark>${m}</mark>`) : query;
+        div.innerHTML = `<div class="sr-ch">${esc(h.chapter)}</div><div class="sr-text">${excerpt}</div>`;
+        div.onclick   = () => { rendition.display(h.cfi); closeSearch(); };
+        results.appendChild(div);
+      });
+    }
+  } catch(e) {
+    results.innerHTML = `<div id="search-empty">Search error: ${esc(e.message)}</div>`;
+  }
+
+  searching = false;
+}
+
+// Close search panel on outside click
+document.addEventListener('click', e => {
+  const panel = document.getElementById('search-panel');
+  const wrap  = document.getElementById('search-wrap');
+  if (!panel.contains(e.target) && !wrap.contains(e.target)) closeSearch();
+});
+
+// ── Utils ───────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
 </body>
 </html>
