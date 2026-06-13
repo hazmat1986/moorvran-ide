@@ -131,6 +131,7 @@ let fontScale     = 100;
 let blobUrl       = null;
 let searchMatches = [];
 let searchIdx     = 0;
+let lastSearch    = '';
 let activeId      = null;
 let scrollTimer   = null;
 
@@ -184,7 +185,8 @@ mark.mv-hl{background:#FDE68A!important;border-radius:2px!important}
 
 // ── Iframe ready ─────────────────────────────────────────────────
 iframe.addEventListener('load', () => {
-  if (!iframe.src || iframe.src === window.location.href) return;
+  const src = iframe.src || '';
+  if (!src || src === 'about:blank') return;
   const doc = iframe.contentDocument;
   if (!doc || !doc.body) return;
   buildToc(doc);
@@ -333,21 +335,33 @@ function renderBookmarks() {
 }
 
 // ── Search ────────────────────────────────────────────────────────
-function searchKey(e) { if (e.key === 'Enter') doSearch(1); }
+function searchKey(e) {
+  if (e.key === 'Enter') doSearch();
+  else lastSearch = ''; // any keystroke clears cycle cache
+}
 
-function doSearch(dir) {
+function doSearch() {
   const query = document.getElementById('search-input').value.trim();
   const doc   = iframe.contentDocument;
   if (!query || !doc) return;
 
-  // Clear old highlights
+  // Same query — just cycle to next match
+  if (query === lastSearch && searchMatches.length > 0) {
+    searchIdx = (searchIdx + 1) % searchMatches.length;
+    searchMatches[searchIdx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.getElementById('search-count').textContent = `${searchIdx + 1} / ${searchMatches.length}`;
+    return;
+  }
+
+  // New query — clear old highlights and re-search
+  lastSearch = query;
+  searchIdx  = 0;
+
   doc.querySelectorAll('mark.mv-hl').forEach(m => {
     m.replaceWith(doc.createTextNode(m.textContent));
   });
   doc.body.normalize();
   searchMatches = [];
-
-  if (!query) { document.getElementById('search-count').textContent = ''; return; }
 
   const regex  = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
   const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
@@ -376,12 +390,11 @@ function doSearch(dir) {
   });
 
   const count = searchMatches.length;
-  document.getElementById('search-count').textContent = count ? `${count} found` : 'Not found';
-
   if (count) {
-    searchIdx = ((searchIdx + (dir === 1 ? 0 : count - 2)) % count + count) % count;
-    if (dir === 1 && searchMatches.length > 1) searchIdx = (searchIdx + 1) % count;
-    searchMatches[searchIdx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    searchMatches[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.getElementById('search-count').textContent = `1 / ${count}`;
+  } else {
+    document.getElementById('search-count').textContent = 'Not found';
   }
 }
 
