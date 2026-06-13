@@ -612,15 +612,18 @@ rdIframe.addEventListener('load', () => {
 });
 
 function _chLabel(label, fallback) {
-  const app = label.match(/appendix\s+([A-Z])/i);
+  const part = label.match(/^part\s+([IVXLCDM]+)/i);
+  if (part) return part[1].toUpperCase();
+  const app = label.match(/appendix\s+([A-Z])/i) || label.match(/^([A-Z])\s/);
   if (app) return app[1].toUpperCase();
   const num = label.match(/^(?:chapter\s+)?(\d+)/i);
   if (num) return num[1];
   if (/^preface/i.test(label))              return 'P';
-  if (/^introduction/i.test(label))          return 'I';
+  if (/^introduction/i.test(label))          return 'Intro';
   if (/^(table of )?contents/i.test(label)) return 'C';
   if (/^acknowledgment/i.test(label))        return 'Ack';
   if (/^foreword/i.test(label))             return 'F';
+  if (/^index$/i.test(label))               return 'Idx';
   return String(fallback);
 }
 
@@ -680,7 +683,8 @@ function rdBuildToc(doc) {
         });
         group.appendChild(subList);
         toggleBtn.onclick = (e) => { e.stopPropagation(); rdToggleChapter(group); };
-        labelEl.onclick = () => rdScrollTo(i);
+        header.style.cursor = 'pointer';
+        header.onclick = () => rdScrollTo(i);
       } else {
         toggleBtn.style.pointerEvents = 'none';
         header.style.cursor = 'pointer';
