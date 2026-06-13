@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Moorvran Learning IDE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', sans-serif; color: #34322C; overflow: hidden; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-thumb { background: #D4D0C6; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Layout ── */
+#app { display: flex; flex-direction: column; height: 100vh; padding: 10px; gap: 9px; }
+#topbar { flex: none; height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+#body { flex: 1; display: flex; gap: 9px; min-height: 0; }
+#left { flex: 1.35; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+
+/* ── Panel ── */
+.panel { background: #FBFAF6; border: 1px solid #E0DDD5; border-radius: 11px; box-shadow: 0 1px 3px rgba(30,28,22,.05); display: flex; flex-direction: column; overflow: hidden; }
+.ph { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 9px 13px; border-bottom: 1px solid #EAE7DF; }
+.plabel { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #9A9588; }
+
+/* ── Top bar ── */
+.tb-logo { width: 24px; height: 24px; border-radius: 6px; background: #5E6C8A; display: flex; align-items: center; justify-content: center; color: #F7F6F2; font-size: 12px; font-weight: 700; }
+.tb-title { font-size: 13.5px; font-weight: 600; color: #2B2922; }
+.tb-sub { font-size: 12px; color: #9A9588; }
+.prog-track { width: 90px; height: 5px; border-radius: 3px; background: #D8D4C9; overflow: hidden; }
+.prog-fill { height: 100%; background: #5E6C8A; border-radius: 3px; transition: width .4s; }
+.prog-label { font-size: 11.5px; color: #9A9588; }
+
+/* ── Tutor ── */
+#tutor { flex: 0 0 34%; }
+.av { width: 25px; height: 25px; border-radius: 50%; background: #5E6C8A; display: flex; align-items: center; justify-content: center; color: #F7F6F2; font-size: 9.5px; font-weight: 700; flex: none; }
+.av-sm { width: 22px; height: 22px; font-size: 9px; }
+.s-dot { width: 7px; height: 7px; border-radius: 50%; background: #6F9B7A; transition: background .3s; }
+#chat-msgs { flex: 1; overflow-y: auto; padding: 11px 13px; display: flex; flex-direction: column; gap: 9px; min-height: 0; }
+.m-ai { display: flex; gap: 7px; align-items: flex-start; }
+.m-ai .b { background: #F0EDE6; border-radius: 4px 11px 11px 11px; padding: 8px 11px; font-size: 12.5px; line-height: 1.55; color: #3A3730; max-width: 88%; }
+.m-me { display: flex; justify-content: flex-end; }
+.m-me .b { background: #E4E7EE; border-radius: 11px 4px 11px 11px; padding: 8px 11px; font-size: 12.5px; line-height: 1.55; color: #343A49; max-width: 88%; }
+.b pre { background: #E6E3DC; border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.55; overflow-x: auto; margin: 5px 0; white-space: pre; }
+.b code { background: #E6E3DC; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+#ci-area { flex: none; padding: 9px 11px; border-top: 1px solid #EAE7DF; display: flex; align-items: center; gap: 8px; background: #F5F3EC; }
+#ci { flex: 1; border: none; background: transparent; outline: none; font-family: 'Hanken Grotesk', sans-serif; font-size: 12.5px; color: #2B2922; }
+#ci::placeholder { color: #B0AB9F; }
+#btn-send { flex: none; width: 30px; height: 30px; border-radius: 8px; background: #5E6C8A; border: none; color: #F7F6F2; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+#btn-send:hover { background: #536079; }
+
+/* ── Editor ── */
+#editor-panel { flex: 1; min-height: 0; background: #FFFFFF; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 9px; background: #F4F2EB; border-radius: 6px; }
+.chip-dot { width: 8px; height: 8px; border-radius: 2px; background: #5E8A6B; }
+.chip-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: #3E3B34; }
+.btn-run { display: flex; align-items: center; gap: 6px; border: none; background: #5E8A6B; color: #F7F6F2; padding: 6px 13px; border-radius: 8px; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: 12.5px; font-weight: 600; transition: background .15s; }
+.btn-run:hover { background: #527B5E; }
+.btn-run:disabled { opacity: .5; cursor: default; }
+.btn-ghost { border: 1px solid #E0DDD5; background: transparent; color: #6F6B61; padding: 5px 11px; border-radius: 8px; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; transition: background .15s; }
+.btn-ghost:hover { background: #F0EDE6; }
+#ew { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+.CodeMirror { position: absolute !important; top: 0; bottom: 0; left: 0; right: 0; height: 100% !important; font-family: 'JetBrains Mono', monospace !important; font-size: 13px !important; line-height: 1.65 !important; }
+.CodeMirror-scroll { height: 100% !important; }
+.CodeMirror-gutters { background: #FAFAFA !important; border-right: 1px solid #ECEAE3 !important; }
+.CodeMirror-linenumber { color: #C0BBB0 !important; font-size: 11.5px !important; }
+#out { flex: none; max-height: 130px; overflow-y: auto; padding: 9px 14px; background: #1B1A17; color: #C5C1B4; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; border-top: 1px solid #2A2925; display: none; }
+#out.on { display: block; }
+.o-err { color: #D97070; }
+.o-dim { color: #706B60; }
+
+/* ── Textbook ── */
+#tb { flex: 1; min-width: 0; flex-direction: row !important; }
+#tb-nav { width: 155px; flex: none; border-right: 1px solid #EAE7DF; overflow-y: auto; padding: 8px 0; }
+.tc { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 12px; color: #706B61; transition: background .12s; }
+.tc:hover { background: #F0EDE6; }
+.tc.on { background: #EBE8E0; color: #1E1C18; font-weight: 600; }
+.tc-n { width: 20px; height: 20px; border-radius: 50%; background: #E6E3DA; color: #9A9588; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.tc.on .tc-n { background: #5E6C8A; color: #F7F6F2; }
+#tb-body { flex: 1; overflow-y: auto; padding: 20px 22px 30px; }
+#tb-body h2 { font-size: 15px; font-weight: 700; color: #1A1815; margin-bottom: 14px; }
+#tb-body h3 { font-size: 12.5px; font-weight: 700; color: #2B2922; margin: 18px 0 7px; text-transform: uppercase; letter-spacing: .04em; }
+#tb-body p { font-size: 13px; line-height: 1.67; color: #4A4640; margin-bottom: 10px; }
+#tb-body pre { background: #F0EDE6; border-radius: 8px; padding: 11px 13px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: #2B2922; overflow-x: auto; margin-bottom: 11px; border: 1px solid #E4E1D8; }
+.tb-note { background: #EAF0E7; border-left: 3px solid #5E8A6B; border-radius: 0 8px 8px 0; padding: 9px 13px; font-size: 12.5px; color: #364836; margin-bottom: 10px; line-height: 1.55; }
+
+/* ── Save btn ── */
+.btn-save { display: flex; align-items: center; gap: 6px; border: none; background: #5E6C8A; color: #F7F6F2; padding: 6px 13px; border-radius: 8px; cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; font-size: 12.5px; font-weight: 600; transition: background .15s; }
+.btn-save:hover { background: #536079; }
+
+/* ── Setup overlay ── */
+#setup { position: fixed; inset: 0; background: rgba(236,234,227,.97); display: flex; align-items: center; justify-content: center; z-index: 200; }
+#sb { background: #FBFAF6; border: 1px solid #E0DDD5; border-radius: 14px; padding: 32px 30px; width: 400px; box-shadow: 0 4px 24px rgba(30,28,22,.10); }
+#sb h2 { font-size: 15px; font-weight: 700; color: #1A1815; margin-bottom: 6px; }
+#sb .ss { font-size: 12.5px; color: #706B61; margin-bottom: 22px; line-height: 1.6; }
+#sb label { font-size: 12px; font-weight: 600; color: #4A4640; display: block; margin-bottom: 6px; }
+#sb input { width: 100%; border: 1px solid #E0DDD5; border-radius: 8px; padding: 10px 12px; font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; color: #2B2922; outline: none; background: #F4F2EB; margin-bottom: 14px; }
+#sb input:focus { border-color: #5E6C8A; }
+#sb .sn { font-size: 11.5px; color: #9A9588; margin-bottom: 18px; line-height: 1.55; }
+#btn-go { width: 100%; background: #5E6C8A; color: #F7F6F2; border: none; border-radius: 8px; padding: 11px; font-family: 'Hanken Grotesk', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+#btn-go:hover { background: #536079; }
+#serr { color: #C0504A; font-size: 12px; margin-top: 8px; display: none; }
+
+/* ── Pyodide loading overlay ── */
+@keyframes spin  { to { transform: rotate(360deg); } }
+@keyframes fadeup { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+@keyframes dot   { 0%,20%   { content: '.'; }
+                   40%,60%  { content: '..'; }
+                   80%,100% { content: '...'; } }
+
+#py-load {
+  position: fixed; inset: 0;
+  background: rgba(236,234,227,.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 150;
+  gap: 18px;
+  backdrop-filter: blur(3px);
+  opacity: 1;
+  transition: opacity .3s ease;
+  pointer-events: all;
+}
+#py-load.hidden { opacity: 0; pointer-events: none; display: none; }
+
+.py-ring-wrap { position: relative; width: 64px; height: 64px; }
+.py-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 3px solid #E0DDD5;
+  border-top-color: #5E6C8A;
+  animation: spin 1s linear infinite;
+}
+.py-logo {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: #5E6C8A;
+  letter-spacing: -.01em;
+}
+.py-label { font-size: 13.5px; font-weight: 600; color: #2B2922; letter-spacing: -.01em; }
+.py-sub   { font-size: 12px; color: #9A9588; }
+</style>
+</head>
+<body>
+
+<!-- Setup -->
+<div id="setup">
+  <div id="sb">
+    <h2>Moorvran Learning IDE</h2>
+    <p class="ss">Your Python + RPG workspace. One file, runs in the browser.<br>Enter your Anthropic API key to enable the tutor chat.</p>
+    <label for="ki">Anthropic API Key</label>
+    <input type="password" id="ki" placeholder="sk-ant-api03-…" autocomplete="off">
+    <p class="sn">Keys start with <code style="font-family:monospace;font-size:11px">sk-ant-</code>. Get one at <strong>console.anthropic.com</strong>.<br>Leave blank to use the IDE without the tutor chat.</p>
+    <button id="btn-go" onclick="go()">Open IDE</button>
+    <p id="serr"></p>
+  </div>
+</div>
+
+<!-- Pyodide loading overlay -->
+<div id="py-load" class="hidden">
+  <div class="py-ring-wrap">
+    <div class="py-ring"></div>
+    <div class="py-logo">M</div>
+  </div>
+  <div class="py-label">Loading Python runtime</div>
+  <div class="py-sub">First load only — cached after this</div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="tb-logo">M</div>
+      <span class="tb-title">Moorvran</span>
+      <span class="tb-sub">game.py &nbsp;·&nbsp; Ch <span id="chn">4</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="prog-track"><div class="prog-fill" id="pf" style="width:18%"></div></div>
+      <span class="prog-label">Ch <span id="chn2">4</span> / 11</span>
+      <button class="btn-save" onclick="saveChk()">↓ Save Checkpoint</button>
+    </div>
+  </div>
+
+  <div id="body">
+    <div id="left">
+
+      <!-- Tutor -->
+      <div class="panel" id="tutor">
+        <div class="ph">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="av">AI</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#2B2922;line-height:1.2">Tutor</div>
+              <div style="font-size:10.5px;color:#A8A39A">Python mentor</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div class="s-dot" id="sdot"></div>
+            <span style="font-size:11px;color:#A8A39A" id="stxt">Loading…</span>
+          </div>
+        </div>
+        <div id="chat-msgs"></div>
+        <div id="ci-area">
+          <input type="text" id="ci" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')send()">
+          <button id="btn-send" onclick="send()">↑</button>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div class="panel" id="editor-panel">
+        <div class="ph">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span class="plabel">Editor</span>
+            <div class="chip"><div class="chip-dot"></div><span class="chip-name">game.py</span></div>
+          </div>
+          <div style="display:flex;gap:7px">
+            <button class="btn-ghost" onclick="clearOut()">Clear</button>
+            <button class="btn-run" id="btn-run" onclick="runCode()">▶&nbsp; Run</button>
+          </div>
+        </div>
+        <div id="ew"></div>
+        <div id="out"></div>
+      </div>
+
+    </div>
+
+    <!-- Textbook -->
+    <div class="panel" id="tb">
+      <div id="tb-nav"></div>
+      <div id="tb-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Pyodide — loads Python into the browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+<script>
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────
+let API_KEY  = '';
+let editor;
+let pyodide  = null;
+let pyReady  = false;
+let chatHist = [];
+let activeCh = 4;
+
+// ── Starter code ───────────────────────────────────────────────
+const STARTER =
+`name = "Oswin Voss"
+rank = "Junior Mage"
+health = 30
+energy = 100
+attack = 17
+defense = 5
+evasion = 10
+max_health = 30
+spell_list = ["Fireball", "Heal Wounds", "Magic Missile"]
+
+print(f"BREHON RIDERS \\u2014 FIELD OPERATIVE RECORD")
+print("=" * 60)
+print(f"NAME:\\t\\t{name}")
+print(f"RANK:\\t\\t{rank}")
+print("-" * 33)
+print(f"HEALTH:\\t\\t{health}")
+print(f"ENERGY:\\t\\t{energy}")
+print(f"ATTACK:\\t\\t{attack}")
+print(f"DEFENCE:\\t{defense}")
+print(f"EVASION:\\t{evasion}")
+print(f"MAX HEALTH:\\t{max_health}")
+print(f"SPELL LIST:\\t{spell_list[0]}")
+print(f"\\t\\t{spell_list[1]}")
+print(f"\\t\\t{spell_list[2]}")
+`;
+
+// ── System prompt ──────────────────────────────────────────────
+const SYS =
+`You are a Python tutor for Ciaran, an insurance broker in South Dakota building a text-based RPG called Moorvran in Python. You are embedded in his learning IDE.
+
+ADHD teaching rules (non-negotiable):
+- Maximum 3 new concepts per response
+- Short paragraphs, 3 lines max
+- Check in after each chunk before continuing
+- Never assume Ciaran remembers something without briefly restating it
+- Direct answers only — no Socratic method unless asked
+- No sycophancy. Corrections must be direct and evidence-based.
+- Do not back down if pushed back without a substantive argument.
+
+Current state:
+- Book: Python Crash Course 3rd Edition by Eric Matthes
+- Current chapter: Chapter 4 — Working with Lists
+- Chapter 4 mechanic: combat rounds using for loops
+- Parallel project: brehon.py — contract list generator
+
+Player: Oswin Voss, Junior Mage
+Stats: health=30, energy=100, attack=17, defense=5, evasion=10, max_health=30
+Spells: ["Fireball", "Heal Wounds", "Magic Missile"]
+
+World: Celtic-inspired text RPG. Voss clears Dún Eagla (tomb).
+Sera is a sellsword companion who dies in Act 2.
+The Silver Veil (An Caille Airgid) is the antagonist institution.
+
+Format code in triple backticks. Keep examples Moorvran-themed.`;
+
+// ── Chapter nav data ───────────────────────────────────────────
+const CHS = [
+  {id:1,t:'Getting Started'},
+  {id:2,t:'Variables & Data Types'},
+  {id:3,t:'Introducing Lists'},
+  {id:4,t:'Working with Lists'},
+  {id:5,t:'If Statements'},
+  {id:6,t:'Dictionaries'},
+  {id:7,t:'User Input & While Loops'},
+  {id:8,t:'Functions'},
+  {id:9,t:'Classes'},
+  {id:10,t:'Files & Exceptions'},
+  {id:11,t:'Testing'},
+];
+
+const CONT = {
+  1:[
+    {t:'p',s:'Python runs code top to bottom, one line at a time. The simplest program is a single print statement.'},
+    {t:'code',s:'print("Oswin Voss enters Dún Eagla.")'},
+    {t:'p',s:'Save the file with a .py extension and run it. That string appears in the terminal. That\'s your first program.'},
+    {t:'note',s:'PCC3 Ch.1 — Installing Python, running your first program, fixing common setup errors.'},
+  ],
+  2:[
+    {t:'p',s:'A variable is a named container. Python figures out the type from what you assign.'},
+    {t:'code',s:'name   = "Oswin Voss"   # string\nhealth = 30             # integer\nalive  = True           # boolean'},
+    {t:'h3',s:'f-strings'},
+    {t:'p',s:'Prefix a string with f and put variable names in curly braces to embed them in output.'},
+    {t:'code',s:'print(f"{name} has {health} HP.")'},
+    {t:'note',s:'PCC3 Ch.2 — Variables, strings, integers, booleans, comments, the Zen of Python.'},
+  ],
+  3:[
+    {t:'p',s:'A list holds multiple values in order, inside square brackets, separated by commas.'},
+    {t:'code',s:'spell_list = ["Fireball", "Heal Wounds", "Magic Missile"]'},
+    {t:'h3',s:'Indexing'},
+    {t:'p',s:'Lists are zero-indexed. First item is [0], last is [-1].'},
+    {t:'code',s:'print(spell_list[0])   # Fireball\nprint(spell_list[-1])  # Magic Missile'},
+    {t:'h3',s:'Modifying'},
+    {t:'code',s:'spell_list.append("Ice Bolt")       # add to end\nspell_list.insert(1, "Shield")     # add at index\nspell_list.remove("Heal Wounds")   # remove by value\nspell_list.pop(0)                  # remove by index'},
+    {t:'note',s:'PCC3 Ch.3 — Lists, indexing, append, insert, remove, pop, sort, reverse.'},
+  ],
+  4:[
+    {t:'h3',s:'for loops'},
+    {t:'p',s:'A for loop runs a block of code once for every item in a list. The variable after for takes each value in turn.'},
+    {t:'code',s:'floor_enemies = ["Goblin Scout", "Goblin Grunt", "Goblin Shaman"]\n\nfor enemy in floor_enemies:\n    print(f"Voss faces: {enemy}")'},
+    {t:'p',s:'The colon after the for line is required. The indented block runs once per item. Unindented code after the loop runs once when the list ends.'},
+    {t:'h3',s:'range()'},
+    {t:'p',s:'range() generates a sequence of numbers. range(5) gives 0–4. range(1, 4) gives 1, 2, 3.'},
+    {t:'code',s:'for round_num in range(1, 4):\n    print(f"--- Round {round_num} ---")'},
+    {t:'h3',s:'Slices'},
+    {t:'p',s:'A slice extracts part of a list. list[start:end] — start inclusive, end exclusive.'},
+    {t:'code',s:'upper_floor = floor_enemies[0:2]   # first two\nall_enemies = floor_enemies[:]     # full copy'},
+    {t:'h3',s:'Useful list operations'},
+    {t:'code',s:'len(floor_enemies)       # count: 3\nfloor_enemies.sort()     # sort in place\nfloor_enemies.reverse()  # reverse in place\nsorted(floor_enemies)    # sorted copy, original unchanged\nmin([8, 15, 12])         # 8\nmax([8, 15, 12])         # 15\nsum([8, 15, 12])         # 35'},
+    {t:'note',s:'PCC3 Ch.4 — for loops, range(), slices, list operations, tuples, PEP 8 style.'},
+  ],
+  5:[
+    {t:'p',s:'if statements let code take different paths. The indented block runs only when the condition is True.'},
+    {t:'code',s:'if health <= 0:\n    print("Voss has fallen.")\nelif health < 10:\n    print("Voss is critically wounded.")\nelse:\n    print("Voss stands firm.")'},
+    {t:'h3',s:'Comparison operators'},
+    {t:'code',s:'==  equal to          !=  not equal\n>   greater than      <   less than\n>=  greater or equal  <=  less or equal'},
+    {t:'h3',s:'Checking list membership'},
+    {t:'code',s:'if "Fireball" in spell_list:\n    print("Fireball ready.")\n\nif "Ice Bolt" not in spell_list:\n    print("Ice Bolt not learned.")'},
+    {t:'note',s:'PCC3 Ch.5 — if, elif, else, comparisons, boolean expressions, in, not in.'},
+  ],
+  6:[
+    {t:'p',s:'A dictionary stores key-value pairs. Access items by name (key), not position.'},
+    {t:'code',s:'goblin = {\n    "name":    "Goblin Scout",\n    "health":  15,\n    "attack":  8,\n    "defense": 3\n}'},
+    {t:'h3',s:'Accessing and modifying'},
+    {t:'code',s:'goblin["health"]               # 15\ngoblin["loot"] = "iron dagger" # add key\ndel goblin["loot"]             # remove key'},
+    {t:'h3',s:'Looping through a dict'},
+    {t:'code',s:'for stat, value in goblin.items():\n    print(f"{stat}: {value}")'},
+    {t:'note',s:'PCC3 Ch.6 — Dictionaries, .items(), .keys(), .values(), nesting.'},
+  ],
+  7:[
+    {t:'p',s:'input() pauses and waits for typing. It always returns a string — convert with int() if you need a number.'},
+    {t:'code',s:'action = input("What do you do? > ")\nprint(f"You chose: {action}")'},
+    {t:'h3',s:'while loops'},
+    {t:'p',s:'while loops repeat as long as a condition is True. This is the game loop — keep running until the player quits or Voss falls.'},
+    {t:'code',s:'while health > 0:\n    action = input("> ")\n    if action == "quit":\n        break'},
+    {t:'note',s:'PCC3 Ch.7 — input(), int() conversion, while loops, break, continue, flags.\n\nNote: input() in this browser IDE uses a popup prompt. Works fine for testing.'},
+  ],
+  8:[
+    {t:'p',s:'A function is a named, reusable block of code. def defines it. Call it by name. return sends a value back.'},
+    {t:'code',s:'def roll_attack(attack_stat, defense_stat):\n    import random\n    roll = random.randint(1, 50)\n    if roll <= attack_stat:\n        raw = 10\n        reduction = max(0.20, 1 - defense_stat / 50)\n        return int(raw * reduction)\n    return 0\n\ndamage = roll_attack(17, 5)\nprint(f"Voss deals {damage} damage.")'},
+    {t:'h3',s:'Default parameters'},
+    {t:'code',s:'def heal(amount, target_health, max_hp=30):\n    return min(target_health + amount, max_hp)'},
+    {t:'note',s:'PCC3 Ch.8 — Functions, parameters, return, default values, keyword args, importing modules.'},
+  ],
+  9:[
+    {t:'p',s:'A class is a blueprint for objects. Each object has its own data (attributes) and behaviour (methods).'},
+    {t:'code',s:'class Enemy:\n    def __init__(self, name, health, attack, defense):\n        self.name    = name\n        self.health  = health\n        self.attack  = attack\n        self.defense = defense\n\n    def is_alive(self):\n        return self.health > 0\n\ngoblin = Enemy("Goblin Scout", 15, 8, 3)\nprint(goblin.name, goblin.is_alive())'},
+    {t:'p',s:'self always refers to the specific object. It comes first in every method but you don\'t pass it when calling.'},
+    {t:'note',s:'PCC3 Ch.9 — Classes, __init__, self, attributes, methods, inheritance.'},
+  ],
+  10:[
+    {t:'p',s:'Python can read and write files. Use the with statement — it closes the file automatically.'},
+    {t:'code',s:'import json\n\n# Save\nstate = {"health": 30, "floor": 1}\nwith open("save.json", "w") as f:\n    json.dump(state, f)\n\n# Load\nwith open("save.json", "r") as f:\n    loaded = json.load(f)\nprint(loaded["health"])  # 30'},
+    {t:'h3',s:'Handling errors'},
+    {t:'code',s:'try:\n    with open("save.json", "r") as f:\n        data = json.load(f)\nexcept FileNotFoundError:\n    print("No save file. Starting new game.")'},
+    {t:'note',s:'PCC3 Ch.10 — Reading/writing files, json, try/except, FileNotFoundError.'},
+  ],
+  11:[
+    {t:'p',s:'Tests are code that checks your code. Python\'s unittest module runs assertions — statements that must be True.'},
+    {t:'code',s:'import unittest\n\nclass TestCombat(unittest.TestCase):\n\n    def test_zero_attack_no_damage(self):\n        result = roll_attack(0, 5)\n        self.assertEqual(result, 0)\n\nunittest.main()'},
+    {t:'note',s:'PCC3 Ch.11 — unittest, TestCase, assertEqual, assertIn, assertRaises.'},
+  ],
+};
+
+// ── Setup ──────────────────────────────────────────────────────
+function go() {
+  const k = document.getElementById('ki').value.trim();
+  const e = document.getElementById('serr');
+  if (k && !k.startsWith('sk-')) {
+    e.textContent = 'API keys start with sk-ant-. Check and try again.';
+    e.style.display = 'block';
+    return;
+  }
+  API_KEY = k;
+  document.getElementById('setup').style.display = 'none';
+  initApp();
+}
+document.getElementById('ki').addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
+
+// ── Init ───────────────────────────────────────────────────────
+function initApp() {
+  initEditor();
+  buildNav();
+  loadCh(4);
+  initPyodide();
+  const msg = API_KEY
+    ? "Ready. Chapter 4 — for loops. What do you need?"
+    : "IDE open (no API key — tutor disabled). Editor and textbook work normally.";
+  aiMsg(msg);
+}
+
+// ── Pyodide ────────────────────────────────────────────────────
+async function initPyodide() {
+  const overlay = document.getElementById('py-load');
+  overlay.classList.remove('hidden');
+  setSt('Loading Python…', false);
+  try {
+    pyodide = await loadPyodide();
+    pyodide.runPython(`
+import sys, io, builtins
+
+class _Cap:
+    def __init__(self): self._b = io.StringIO()
+    def write(self, s): self._b.write(s)
+    def flush(self): pass
+    def getvalue(self): v = self._b.getvalue(); self._b = io.StringIO(); return v
+
+_out = _Cap()
+_err = _Cap()
+sys.stdout = _out
+sys.stderr = _err
+`);
+    pyReady = true;
+    // Fade out then hide
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.classList.add('hidden'), 320);
+    setSt('Online', true);
+  } catch(e) {
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.classList.add('hidden'), 320);
+    setSt('Python failed', false);
+    console.error('Pyodide error:', e);
+  }
+}
+
+// ── Editor ─────────────────────────────────────────────────────
+function initEditor() {
+  editor = CodeMirror(document.getElementById('ew'), {
+    value: STARTER,
+    mode: 'python',
+    lineNumbers: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: false,
+    extraKeys: {
+      'Tab': cm => cm.execCommand('indentMore'),
+      'Shift-Tab': cm => cm.execCommand('indentLess'),
+    },
+  });
+  setTimeout(() => editor.refresh(), 120);
+}
+
+// ── Run code ───────────────────────────────────────────────────
+async function runCode() {
+  if (!pyReady) {
+    const o = document.getElementById('out');
+    o.innerHTML = '<span class="o-err">Python is still loading. Wait a moment then try again.</span>';
+    o.classList.add('on');
+    return;
+  }
+  const code = editor.getValue();
+  const btn  = document.getElementById('btn-run');
+  btn.disabled = true;
+  btn.innerHTML = '⏳&nbsp; Running…';
+
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+  out.classList.add('on');
+
+  // Patch input() to use browser prompt
+  const patchedCode = `
+import builtins as _bi
+import js as _js
+_bi.input = lambda p='': _js.prompt(str(p)) or ''
+` + code;
+
+  let errMsg = '';
+  try {
+    await pyodide.runPythonAsync(patchedCode);
+  } catch(e) {
+    errMsg = e.message;
+  }
+
+  const stdout = pyodide.runPython('_out.getvalue()');
+  const stderr = pyodide.runPython('_err.getvalue()');
+
+  if (stdout) out.innerHTML += esc(stdout);
+  if (stderr) out.innerHTML += `<span class="o-err">${esc(stderr)}</span>`;
+  if (errMsg) out.innerHTML += `<span class="o-err">${esc(errMsg)}</span>`;
+  if (!stdout && !stderr && !errMsg) {
+    out.innerHTML = '<span class="o-dim">(no output)</span>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '▶&nbsp; Run';
+}
+
+function clearOut() {
+  const o = document.getElementById('out');
+  o.innerHTML = '';
+  o.classList.remove('on');
+}
+
+// ── Save checkpoint ────────────────────────────────────────────
+function saveChk() {
+  const blob = new Blob([editor.getValue()], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ch${activeCh}_game.py`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Chat ───────────────────────────────────────────────────────
+async function send() {
+  if (!API_KEY) {
+    aiMsg('No API key was entered. Reload the page and enter a key on the setup screen.');
+    return;
+  }
+  const input = document.getElementById('ci');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  meMsg(text);
+  chatHist.push({role: 'user', content: text});
+  setSt('Thinking…', false);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYS,
+        messages: chatHist,
+      }),
+    });
+    const data = await res.json();
+    if (data.content && data.content[0]) {
+      const reply = data.content[0].text;
+      chatHist.push({role: 'assistant', content: reply});
+      aiMsg(reply);
+    } else if (data.error) {
+      aiMsg(`API error: ${data.error.message || 'unknown'}`);
+    }
+  } catch(e) {
+    aiMsg(`Network error: ${esc(e.message)}\n\nMake sure you are accessing this page over HTTPS (not file://).`);
+  }
+  setSt('Online', true);
+}
+
+function aiMsg(text) {
+  const d = document.createElement('div');
+  d.className = 'm-ai';
+  d.innerHTML = `<div class="av av-sm">AI</div><div class="b">${fmt(text)}</div>`;
+  append(d);
+}
+function meMsg(text) {
+  const d = document.createElement('div');
+  d.className = 'm-me';
+  d.innerHTML = `<div class="b">${esc(text)}</div>`;
+  append(d);
+}
+function append(el) {
+  const m = document.getElementById('chat-msgs');
+  m.appendChild(el);
+  m.scrollTop = m.scrollHeight;
+}
+
+function setSt(label, online) {
+  document.getElementById('stxt').textContent = label;
+  document.getElementById('sdot').style.background = online ? '#6F9B7A' : '#C09A50';
+}
+
+function fmt(s) {
+  return esc(s)
+    .replace(/```python\n?([\s\S]*?)```/g, '<pre>$1</pre>')
+    .replace(/```[\w]*\n?([\s\S]*?)```/g,  '<pre>$1</pre>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Textbook ───────────────────────────────────────────────────
+function buildNav() {
+  const nav = document.getElementById('tb-nav');
+  CHS.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'tc' + (c.id === activeCh ? ' on' : '');
+    d.dataset.id = c.id;
+    d.innerHTML = `<div class="tc-n">${c.id}</div><span>${c.t}</span>`;
+    d.addEventListener('click', () => loadCh(c.id));
+    nav.appendChild(d);
+  });
+}
+
+function loadCh(id) {
+  activeCh = id;
+  document.querySelectorAll('.tc').forEach(el => el.classList.toggle('on', +el.dataset.id === id));
+  document.getElementById('chn').textContent  = id;
+  document.getElementById('chn2').textContent = id;
+  document.getElementById('pf').style.width   = Math.round(id / 11 * 100) + '%';
+
+  const ch   = CHS.find(c => c.id === id);
+  const body = document.getElementById('tb-body');
+  body.innerHTML = `<h2>Chapter ${id}: ${ch.t}</h2>`;
+  (CONT[id] || []).forEach(b => {
+    let el;
+    if      (b.t === 'p')    { el = document.createElement('p');   el.textContent = b.s; }
+    else if (b.t === 'h3')   { el = document.createElement('h3');  el.textContent = b.s; }
+    else if (b.t === 'code') { el = document.createElement('pre'); el.textContent = b.s; }
+    else if (b.t === 'note') {
+      el = document.createElement('div');
+      el.className = 'tb-note';
+      el.innerHTML = `<strong>Note —</strong> ${esc(b.s)}`;
+    }
+    if (el) body.appendChild(el);
+  });
+  body.scrollTop = 0;
+}
+</script>
+</body>
+</html>
