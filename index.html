@@ -642,6 +642,7 @@ function rdBuildToc(doc) {
     const item = rdToc[i];
     if (item.depth === 0) {
       chNum++;
+      const chIdx = i;
       const subs = [];
       let j = i + 1;
       while (j < rdToc.length && rdToc[j].depth > 0) { subs.push({ item: rdToc[j], idx: j }); j++; }
@@ -684,11 +685,11 @@ function rdBuildToc(doc) {
         group.appendChild(subList);
         toggleBtn.onclick = (e) => { e.stopPropagation(); rdToggleChapter(group); };
         header.style.cursor = 'pointer';
-        header.onclick = () => rdScrollTo(i);
+        header.onclick = () => rdScrollTo(chIdx);
       } else {
         toggleBtn.style.pointerEvents = 'none';
         header.style.cursor = 'pointer';
-        header.onclick = () => rdScrollTo(i);
+        header.onclick = () => rdScrollTo(chIdx);
       }
       pane.appendChild(group);
       i = j;
@@ -807,7 +808,7 @@ function rdRenderBm() {
     const div = document.createElement('div');
     div.className = 'bm-item';
     div.innerHTML = `<div class="bm-label">${esc(bm.label)}</div><div class="bm-meta"><span class="bm-date">${bm.date}</span><button class="bm-del" title="Remove">×</button></div>`;
-    div.querySelector('.bm-label').onclick = () => { const i = rdToc.findIndex(t => t.id === bm.id); if (i >= 0) rdScrollTo(i); };
+    div.querySelector('.bm-label').onclick = () => { const i = rdToc.findIndex(t => t.id === bm.id); if (i >= 0) rdScrollTo(chIdx); };
     div.querySelector('.bm-del').onclick   = e => { e.stopPropagation(); rdDeleteBm(bm.id); };
     pane.appendChild(div);
   });
