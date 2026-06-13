@@ -371,7 +371,12 @@ function buildToc(items) {
       <span>${item.label}</span>
     `;
     btn.onclick = () => {
-      rendition.display(item.href);
+      // Strip fragment — paginated mode navigates by chapter, not anchor
+      const href = item.href.split('#')[0] || item.href;
+      rendition.display(href).catch(() => {
+        // If that fails, try the full href as a fallback
+        rendition.display(item.href);
+      });
       setActiveToc(i);
     };
     list.appendChild(btn);
@@ -423,4 +428,3 @@ document.addEventListener('keydown', e => {
 </script>
 </body>
 </html>
-
