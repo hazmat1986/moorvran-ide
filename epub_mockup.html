@@ -210,8 +210,7 @@ html, body { height: 100%; background: #ECEAE3; font-family: 'Hanken Grotesk', s
       <span class="sub">Mockup — drop any .epub to test</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
-      <div class="prog-track"><div class="prog-fill" id="progress-fill"></div></div>
-      <span class="prog-label" id="prog-label">0%</span>
+      <span class="prog-label" id="prog-label">Ch — / —</span>
       <button class="btn-nav" id="btn-prev" disabled onclick="prevPage()">← Prev</button>
       <button class="btn-nav" id="btn-next" disabled onclick="nextPage()">Next →</button>
     </div>
@@ -303,7 +302,7 @@ function openBook(arrayBuffer) {
     width:  '100%',
     height: '100%',
     spread: 'none',
-    flow:   'paginated',
+    flow:   'scrolled-doc',
   });
 
   // Style the iframe content to match IDE aesthetic
@@ -336,12 +335,6 @@ function openBook(arrayBuffer) {
   });
 
   rendition.display();
-
-  // Generate locations — wait for completion before progress works
-  book.locations.generate(1024).then(() => {
-    const loc = rendition.currentLocation();
-    if (loc) updateProgress(loc);
-  });
 
   // Build TOC once navigation loads
   book.loaded.navigation.then(nav => {
@@ -383,11 +376,9 @@ function buildToc(items) {
       <span>${item.label}</span>
     `;
     btn.onclick = () => {
-      // Strip fragment — paginated mode navigates by chapter, not anchor
-      const href = item.href.split('#')[0] || item.href;
-      rendition.display(href).catch(() => {
-        // If that fails, try the full href as a fallback
-        rendition.display(item.href);
+      // In scrolled mode, full href with fragment navigates to the anchor
+      rendition.display(item.href).catch(() => {
+        rendition.display(item.href.split('#')[0]);
       });
       setActiveToc(i);
     };
@@ -403,7 +394,11 @@ function setActiveToc(idx) {
   if (tocItems[idx]) {
     document.getElementById('chapter-title').textContent = tocItems[idx].label;
   }
-  // Scroll active item into view
+  // Chapter counter — top-level items only
+  const topLevel = tocItems.filter(t => t.depth === 0);
+  const curTop   = tocItems.slice(0, idx + 1).filter(t => t.depth === 0).length;
+  document.getElementById('prog-label').textContent = 'Ch ' + curTop + ' / ' + topLevel.length;
+
   const active = document.querySelector('.toc-item.active');
   if (active) active.scrollIntoView({ block: 'nearest' });
 }
@@ -424,13 +419,7 @@ function nextPage() {
 
 // ── Progress ──────────────────────────────────────────────────
 function updateProgress(location) {
-  if (!book || !book.locations || !book.locations.total) return;
-  const pct = book.locations.percentageFromCfi(location.start.cfi);
-  if (pct !== undefined) {
-    const pctRounded = Math.round(pct * 100);
-    document.getElementById('progress-fill').style.width = pctRounded + '%';
-    document.getElementById('prog-label').textContent    = pctRounded + '%';
-  }
+  // Chapter counter handled by setActiveToc
 }
 
 // ── Keyboard navigation ───────────────────────────────────────
