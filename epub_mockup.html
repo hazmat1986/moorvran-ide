@@ -340,14 +340,16 @@ function openBook(arrayBuffer) {
   // Generate locations for percentage tracking (runs in background)
   book.locations.generate(1024);
 
-  // Fix iframe sandbox — epub.js creates the iframe internally,
-  // we patch it after rendition display to allow scripts
-  rendition.on('rendered', () => {
-    const iframe = document.querySelector('#viewer iframe');
-    if (iframe && iframe.hasAttribute('sandbox')) {
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-    }
+  // epub.js creates sandboxed iframes internally — patch them as they appear
+  const viewer = document.getElementById('viewer');
+  const observer = new MutationObserver(() => {
+    viewer.querySelectorAll('iframe').forEach(f => {
+      if (f.hasAttribute('sandbox')) {
+        f.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+      }
+    });
   });
+  observer.observe(viewer, { childList: true, subtree: true });
 
   // Build TOC once navigation loads
   book.loaded.navigation.then(nav => {
