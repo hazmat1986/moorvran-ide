@@ -214,6 +214,21 @@ function enableControls() {
   });
 }
 
+function _chLabel(label, fallback) {
+  const part = label.match(/^part\s+(\d+)/i);
+  if (part) return ['I','II','III','IV','V','VI'][+part[1]-1] || part[1];
+  const app = label.match(/appendix\s+([A-Z])/i) || label.match(/^([A-Z])[.:)]/);
+  if (app) return app[1].toUpperCase();
+  const num = label.match(/^(?:chapter\s+)?(\d+)/i);
+  if (num) return num[1];
+  if (/^preface/i.test(label))              return 'P';
+  if (/^introduction/i.test(label))          return 'Intro';
+  if (/^(table of )?contents/i.test(label)) return 'C';
+  if (/^acknowledgment/i.test(label))        return 'Ack';
+  if (/^foreword/i.test(label))             return 'F';
+  return String(fallback);
+}
+
 // ── TOC ──────────────────────────────────────────────────────────
 function buildToc(doc) {
   const headings = Array.from(doc.querySelectorAll('h1,h2,h3,h4'));
@@ -254,8 +269,7 @@ function buildToc(doc) {
 
       const numEl = document.createElement('div');
       numEl.className = 'toc-n';
-      const _m = item.label.match(/^(?:chapter\s+)?(\d+)/i);
-      numEl.textContent = _m ? _m[1] : chNum;
+      numEl.textContent = _chLabel(item.label, chNum);
 
       const labelEl = document.createElement('span');
       labelEl.className = 'toc-ch-label';
@@ -285,7 +299,8 @@ function buildToc(doc) {
         });
         group.appendChild(subList);
         toggleBtn.onclick = (e) => { e.stopPropagation(); toggleChapter(group); };
-        labelEl.onclick = () => scrollToSection(i);
+        header.style.cursor = 'pointer';
+        header.onclick = () => scrollToSection(i);
       } else {
         toggleBtn.style.pointerEvents = 'none';
         header.style.cursor = 'pointer';
