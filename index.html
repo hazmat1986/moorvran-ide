@@ -18,7 +18,7 @@ html,body{height:100%;background:#ECEAE3;font-family:'Hanken Grotesk',sans-serif
 #app{display:flex;flex-direction:column;height:100vh;padding:10px;gap:9px}
 #topbar{flex:none;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 4px}
 #body{flex:1;display:flex;gap:9px;min-height:0}
-#left{flex:1.35;display:flex;flex-direction:column;gap:9px;min-width:0}
+#left{flex:1.1;display:flex;flex-direction:column;gap:9px;min-width:0}
 
 /* ── Panel shell ── */
 .panel{background:#FBFAF6;border:1px solid #E0DDD5;border-radius:11px;box-shadow:0 1px 3px rgba(30,28,22,.05);display:flex;flex-direction:column;overflow:hidden}
@@ -72,7 +72,7 @@ html,body{height:100%;background:#ECEAE3;font-family:'Hanken Grotesk',sans-serif
 
 /* ── Book reader ── */
 #reader{flex:1;min-width:0;flex-direction:row!important}
-#rd-sidebar{width:195px;flex:none;border-right:1px solid #EAE7DF;display:flex;flex-direction:column;overflow:hidden}
+#rd-sidebar{width:220px;flex:none;border-right:1px solid #EAE7DF;display:flex;flex-direction:column;overflow:hidden}
 #rd-tabs{flex:none;display:flex;border-bottom:1px solid #EAE7DF}
 .stab{flex:1;padding:8px 0;text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9A9588;cursor:pointer;border:none;background:none;transition:background .12s;border-bottom:2px solid transparent}
 .stab:hover{background:#F0EDE6}
@@ -80,13 +80,14 @@ html,body{height:100%;background:#ECEAE3;font-family:'Hanken Grotesk',sans-serif
 .tab-pane{flex:1;overflow-y:auto;padding:6px 0;display:none}
 .tab-pane.on{display:block}
 .toc-group{display:flex;flex-direction:column}
-.toc-chapter{display:flex;align-items:center;gap:7px;padding:6px 11px;font-size:12px;color:#4A4640;line-height:1.4;transition:background .12s}
+.toc-chapter-row{display:flex;align-items:center}
+.toc-chapter{flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 4px;font-size:12px;color:#4A4640;line-height:1.4;border:none;background:none;cursor:pointer;text-align:left;transition:background .12s}
 .toc-chapter:hover{background:#F0EDE6}
 .toc-chapter.on{background:#EBE8E0;color:#1E1C18;font-weight:600}
 .toc-chapter.on .toc-n{background:#5E6C8A;color:#F7F6F2}
-.toc-toggle{flex:none;width:16px;height:16px;background:none;border:none;cursor:pointer;font-size:9px;color:#9A9588;display:flex;align-items:center;justify-content:center;padding:0;border-radius:3px;transition:background .12s}
+.toc-toggle{flex:none;width:20px;height:36px;background:none;border:none;cursor:pointer;font-size:9px;color:#9A9588;display:flex;align-items:center;justify-content:center;padding:0;border-radius:3px;transition:background .12s}
 .toc-toggle:hover{background:#E8E5DC;color:#4A4640}
-.toc-ch-label{flex:1;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toc-ch-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toc-subs{display:none;flex-direction:column}
 .toc-subs.open{display:flex}
 .toc-item{display:flex;align-items:flex-start;gap:6px;padding:5px 11px 5px 30px;cursor:pointer;font-size:11.5px;color:#8A8680;line-height:1.4;border:none;background:none;width:100%;text-align:left;transition:background .12s}
@@ -648,13 +649,17 @@ function rdBuildToc(doc) {
       while (j < rdToc.length && rdToc[j].depth > 0) { subs.push({ item: rdToc[j], idx: j }); j++; }
       const group = document.createElement('div');
       group.className = 'toc-group';
-      const header = document.createElement('div');
-      header.className = 'toc-chapter';
-      header.dataset.idx = i;
+      const row = document.createElement('div');
+      row.className = 'toc-chapter-row';
       const toggleBtn = document.createElement('button');
       toggleBtn.className = 'toc-toggle';
       toggleBtn.textContent = subs.length ? '▶' : ' ';
       toggleBtn.setAttribute('aria-label', 'Toggle');
+      if (!subs.length) toggleBtn.style.pointerEvents = 'none';
+      const navBtn = document.createElement('button');
+      navBtn.className = 'toc-chapter';
+      navBtn.dataset.idx = chIdx;
+      navBtn.onclick = () => rdScrollTo(chIdx);
       const numEl = document.createElement('div');
       numEl.className = 'toc-n';
       numEl.textContent = _chLabel(item.label, chNum);
@@ -662,10 +667,11 @@ function rdBuildToc(doc) {
       labelEl.className = 'toc-ch-label';
       labelEl.textContent = item.label;
       labelEl.title = item.label;
-      header.appendChild(toggleBtn);
-      header.appendChild(numEl);
-      header.appendChild(labelEl);
-      group.appendChild(header);
+      navBtn.appendChild(numEl);
+      navBtn.appendChild(labelEl);
+      row.appendChild(toggleBtn);
+      row.appendChild(navBtn);
+      group.appendChild(row);
       if (subs.length) {
         const subList = document.createElement('div');
         subList.className = 'toc-subs';
@@ -683,13 +689,7 @@ function rdBuildToc(doc) {
           subList.appendChild(btn);
         });
         group.appendChild(subList);
-        toggleBtn.onclick = (e) => { e.stopPropagation(); rdToggleChapter(group); };
-        header.style.cursor = 'pointer';
-        header.onclick = () => rdScrollTo(chIdx);
-      } else {
-        toggleBtn.style.pointerEvents = 'none';
-        header.style.cursor = 'pointer';
-        header.onclick = () => rdScrollTo(chIdx);
+        toggleBtn.onclick = () => rdToggleChapter(group);
       }
       pane.appendChild(group);
       i = j;
